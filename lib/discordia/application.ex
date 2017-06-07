@@ -14,6 +14,7 @@ defmodule Discordia.Application do
       supervisor(Discordia.Web.Endpoint, []),
       # Start your own worker by calling: Discordia.Worker.start_link(arg1, arg2, arg3)
       # worker(Discordia.Worker, [arg1, arg2, arg3]),
+      supervisor(Discordia.GameSupervisor, []),
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
