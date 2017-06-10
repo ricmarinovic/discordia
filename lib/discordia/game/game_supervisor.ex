@@ -1,4 +1,9 @@
 defmodule Discordia.GameSupervisor do
+  @moduledoc """
+  Supervisor for all games. It supervises a RoomSupervisor, which in turn
+  supervises a GameServer worker and several Player workers.
+  """
+
   use Supervisor
 
   def start_link() do
@@ -7,7 +12,7 @@ defmodule Discordia.GameSupervisor do
 
   def init([]) do
     children = [
-      worker(Discordia.GameServer, [])
+      supervisor(Discordia.RoomSupervisor, []),
     ]
 
     supervise(children, strategy: :simple_one_for_one)

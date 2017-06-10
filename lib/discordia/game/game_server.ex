@@ -1,14 +1,18 @@
 defmodule Discordia.GameServer do
+  @moduledoc """
+  Holds the state of a single game.
+  """
+
   use GenServer
 
-  def start_link(name, players) do
-    {:ok, _pid} = GenServer.start_link(__MODULE__,
+  def start_link(game, players) do
+    GenServer.start_link(__MODULE__,
       %{
         players: players,
-      }, name: via(name))
+      }, name: via(game))
   end
 
-  def via(name), do: {:global, name}
+  def via(game), do: {:global, "@#{game}"}
 
   def players(game), do: GenServer.call(via(game), :get_players)
 

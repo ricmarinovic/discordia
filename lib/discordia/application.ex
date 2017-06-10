@@ -1,4 +1,5 @@
 defmodule Discordia.Application do
+  @moduledoc false
   use Application
 
   # See http://elixir-lang.org/docs/stable/elixir/Application.html
@@ -12,8 +13,6 @@ defmodule Discordia.Application do
       supervisor(Discordia.Repo, []),
       # Start the endpoint when the application starts
       supervisor(Discordia.Web.Endpoint, []),
-      # Start your own worker by calling: Discordia.Worker.start_link(arg1, arg2, arg3)
-      # worker(Discordia.Worker, [arg1, arg2, arg3]),
       supervisor(Discordia.GameSupervisor, []),
     ]
 
