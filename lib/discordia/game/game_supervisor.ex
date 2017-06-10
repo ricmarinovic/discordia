@@ -1,7 +1,7 @@
 defmodule Discordia.GameSupervisor do
   @moduledoc """
   Supervisor for all games. It supervises a RoomSupervisor, which in turn
-  supervises a GameServer worker and several Player workers.
+  supervises a GameServer worker and several PlayerServer workers.
   """
 
   use Supervisor
