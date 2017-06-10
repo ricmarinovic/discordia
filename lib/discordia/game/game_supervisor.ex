@@ -1,13 +1,13 @@
 defmodule Discordia.GameSupervisor do
   @moduledoc """
   Supervisor for all games. It supervises a RoomSupervisor, which in turn
-  supervises a GameServer worker and several PlayerServer workers.
+  supervises a GameServer worker and several Player workers.
   """
 
   use Supervisor
 
   def start_link() do
-    Supervisor.start_link(__MODULE__, [], name: __MODULE__)
+    {:ok, _} = Supervisor.start_link(__MODULE__, [], name: __MODULE__)
   end
 
   def init([]) do

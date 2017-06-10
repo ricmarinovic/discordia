@@ -4,7 +4,7 @@ defmodule Discordia.Game do
   """
 
   import Discordia.GameServer, except: [start_link: 2, via: 1]
-  import Discordia.PlayerServer, except: [start_link: 2, via: 2]
+  import Discordia.Player, except: [start_link: 2, via: 2]
 
   @initial_cards 7
 
@@ -12,7 +12,7 @@ defmodule Discordia.Game do
   Starts a game, provided a name for the game and a list of players.
   """
   def start(name, players) do
-    Supervisor.start_child(Discordia.GameSupervisor, [name, players])
+    {:ok, _} = Supervisor.start_child(Discordia.GameSupervisor, [name, players])
     turn(name, current_turn(name))
   end
 
@@ -21,7 +21,7 @@ defmodule Discordia.Game do
   """
   def play(game, player, card) do
     # Put card on the table
-    current_card(game, card)
+    play_card(game, card)
 
     # Remove card from player's hand
     remove_card(game, player, card)
@@ -30,19 +30,41 @@ defmodule Discordia.Game do
     turn(game, inc_turn(game))
   end
 
-  defp turn(game, 0) do
-    # Set the first player to play
-    [player | _] = players(game)
-    current_player(game, player)
+  @doc """
+  The `player` draws a card from the deck. It is still his turn.
+  """
+  def draw(game, player) do
+    [card] = player_draws(game, player)
+    info(game, Mix.env)
+    card
+  end
 
+  defp turn(game, _turn = 0) do
     # Draw and put the first card on the table
-    card = draw_card(game)
-    current_card(game, card)
+    play_card(game, draw_card(game))
 
     # Each player gets 7 cards
     for player <- players(game) do
       player_draws(game, player, @initial_cards)
     end
+
+    info(game, Mix.env)
   end
-  defp turn(_game, _turn), do: nil
+  defp turn(game, _turn) do
+    next_player(game)
+
+    info(game, Mix.env)
+  end
+
+  def info(game, env) when env == :dev do
+    IO.puts "\nTurn #{current_turn(game)}"
+    current_card = current_card(game)
+    IO.puts "Current card: #{current_card.value} #{current_card.color}"
+    current_player = current_player(game)
+    IO.puts "Current player *#{current_player}* cards:"
+    IO.inspect(cards(game, current_player))
+
+    :ok
+  end
+  def info(_game, _env), do: nil
 end

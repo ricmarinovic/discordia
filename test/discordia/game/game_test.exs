@@ -1,14 +1,14 @@
 defmodule Discordia.GameTest do
   use ExUnit.Case
 
-  alias Discordia.{Game, GameServer, GameSupervisor, PlayerServer}
+  alias Discordia.{Game, GameServer, GameSupervisor, Player}
 
   setup_all do
-    game_name = "game name"
-    players = ["eu", "voce"]
-    Game.start(game_name, players)
+    name = "game name"
+    players = [p1, p2] = ["eu", "voce"]
+    Game.start(name, players)
 
-    {:ok, %{name: game_name, players: players}}
+    {:ok, %{name: name, players: players, p1: p1, p2: p2}}
   end
 
   test "starting a new game", game do
@@ -19,18 +19,10 @@ defmodule Discordia.GameTest do
   end
 
   test "first turn", game do
-    [p1, p2] = game.players
     initial_cards = 7
 
-    assert GameServer.current_player(game.name) == p1
-    assert length(PlayerServer.cards(game.name, p1)) == initial_cards
-    assert length(PlayerServer.cards(game.name, p2)) == initial_cards
-  end
-
-  test "playing a card", game do
-    [p1, _p2] = game.players
-    Game.play(game.name, p1, %{})
-
-    assert GameServer.current_turn(game.name) == 1
+    assert GameServer.current_player(game.name) == game.p1
+    assert length(Player.cards(game.name, game.p1)) == initial_cards
+    assert length(Player.cards(game.name, game.p2)) == initial_cards
   end
 end
