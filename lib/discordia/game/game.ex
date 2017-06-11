@@ -6,6 +6,8 @@ defmodule Discordia.Game do
   import Discordia.GameServer, except: [start_link: 2, via: 1]
   import Discordia.Player, except: [start_link: 2, via: 2]
 
+  alias Discordia.Dealer
+
   @initial_cards 7
 
   @doc """
@@ -41,7 +43,7 @@ defmodule Discordia.Game do
 
   defp turn(game, _turn = 0) do
     # Draw and put the first card on the table
-    play_card(game, draw_card(game))
+    play_card(game, draw_card(game), Dealer.initial_color())
 
     # Each player gets 7 cards
     for player <- players(game) do

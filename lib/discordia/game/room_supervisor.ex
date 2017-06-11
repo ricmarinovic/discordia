@@ -8,8 +8,8 @@ defmodule Discordia.RoomSupervisor do
   alias Discordia.{GameServer, Player}
 
   def start_link(game, players) do
-    via = {:global, "sup@#{game}"}
-    {:ok, _} = Supervisor.start_link(__MODULE__, [game, players], name: via)
+    {:ok, _} = Supervisor.start_link(__MODULE__, [game, players],
+        name: via(game))
   end
 
   def init([game, players]) do
@@ -21,4 +21,8 @@ defmodule Discordia.RoomSupervisor do
 
     supervise(children, strategy: :one_for_one)
   end
+
+  def stop(game), do: Supervisor.stop(via(game), :normal)
+
+  def via(game), do: {:global, "sup@#{game}"}
 end

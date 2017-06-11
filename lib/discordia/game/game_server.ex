@@ -46,7 +46,14 @@ defmodule Discordia.GameServer do
 
   def draw_card(game), do: GenServer.call(via(game), :draw_card)
 
-  def play_card(game, card), do: GenServer.cast(via(game), {:play_card, card})
+  def play_card(game, card, next \\ nil) do
+    case card do
+      %{color: "black"} ->
+        GenServer.cast(via(game), {:play_card, %{card | next: next}})
+      _ ->
+        GenServer.cast(via(game), {:play_card, card})
+    end
+  end
 
   # Turn
 

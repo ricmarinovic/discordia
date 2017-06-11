@@ -12,7 +12,7 @@ defmodule Discordia.GameSupervisor do
 
   def init([]) do
     children = [
-      supervisor(Discordia.RoomSupervisor, []),
+      supervisor(Discordia.RoomSupervisor, [], restart: :transient)
     ]
 
     supervise(children, strategy: :simple_one_for_one)
