@@ -1,7 +1,7 @@
 defmodule Discordia.GameTest do
   use ExUnit.Case
 
-  alias Discordia.{Game, GameServer, GameSupervisor, Player, RoomSupervisor}
+  alias Discordia.{Game, GameServer, Player, RoomSupervisor}
 
   @initial_cards 7
 
@@ -13,13 +13,6 @@ defmodule Discordia.GameTest do
     on_exit fn() -> RoomSupervisor.stop(name) end
 
     {:ok, %{name: name, players: players, p1: p1, p2: p2}}
-  end
-
-  test "starting a new game", game do
-    assert %{supervisors: 1} = Supervisor.count_children(GameSupervisor)
-
-    via_sup = RoomSupervisor.via(game.name)
-    assert %{active: 3} = Supervisor.count_children(via_sup)
   end
 
   test "first turn", game do
@@ -45,7 +38,37 @@ defmodule Discordia.GameTest do
 
   test "initial black card", game do
     card = %{color: "black", value: "wildcard", next: nil}
-    GameServer.play_card(game.name, card, "red")
+    GameServer.put_card(game.name, card, "red")
     assert GameServer.current_card(game.name) == %{card | next: "red"}
+  end
+
+  test "playing a black card", game do
+    card = %{color: "black", value: "wildcard", next: nil}
+    assert {:error, _} = Game.play(game.name, game.p1, card)
+
+    card = %{color: "black", value: "wildcard", next: "red"}
+    Game.play(game.name, game.p1, card)
+    assert GameServer.current_card(game.name) == card
+    refute card in Player.cards(game.name, game.p1)
+    assert GameServer.current_player(game.name) == game.p2
+  end
+
+  test "playing reverse card" do
+    other_game = "other game"
+    players = [p1, p2, p3, p4] =
+      ["p1", "p2", "p3", "p4"]
+    Game.start(other_game, players)
+
+    Game.play(other_game, p1, %{color: "blue", value: "1"})
+    assert GameServer.current_player(other_game) == p2
+    Game.play(other_game, p2, %{color: "blue", value: "2"})
+    assert GameServer.current_player(other_game) == p3
+    Game.play(other_game, p3, %{color: "blue", value: "reverse"})
+    assert GameServer.current_player(other_game) == p2
+    Game.play(other_game, p2, %{color: "blue", value: "block"})
+    assert GameServer.current_player(other_game) == p4
+    Game.play(other_game, p4, %{color: "blue", value: "reverse"})
+    assert GameServer.current_player(other_game) == p1
+    assert GameServer.player_queue(other_game) == players
   end
 end

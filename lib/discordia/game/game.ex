@@ -6,8 +6,6 @@ defmodule Discordia.Game do
   import Discordia.GameServer, except: [start_link: 2, via: 1]
   import Discordia.Player, except: [start_link: 2, via: 2]
 
-  alias Discordia.Dealer
-
   @initial_cards 7
 
   @doc """
@@ -15,21 +13,24 @@ defmodule Discordia.Game do
   """
   def start(name, players) do
     {:ok, _} = Supervisor.start_child(Discordia.GameSupervisor, [name, players])
-    turn(name, current_turn(name))
+    turn(name, :first)
   end
 
   @doc """
   The `player` plays a `card` and another turn is started.
   """
+  def play(_game, _player, %{color: "black", next: nil}) do
+    {:error, "Must provide the next card color."}
+  end
   def play(game, player, card) do
     # Put card on the table
-    play_card(game, card)
+    play_card(game, player, card)
 
     # Remove card from player's hand
     remove_card(game, player, card)
 
     # This turn is over, next turn
-    turn(game, inc_turn(game))
+    turn(game)
   end
 
   @doc """
@@ -41,9 +42,9 @@ defmodule Discordia.Game do
     card
   end
 
-  defp turn(game, _turn = 0) do
+  defp turn(game, :first) do
     # Draw and put the first card on the table
-    play_card(game, draw_card(game), Dealer.initial_color())
+    put_card(game, draw_card(game))
 
     # Each player gets 7 cards
     for player <- players(game) do
@@ -52,9 +53,7 @@ defmodule Discordia.Game do
 
     info(game, Mix.env)
   end
-  defp turn(game, _turn) do
-    next_player(game)
-
+  defp turn(game) do
     info(game, Mix.env)
   end
 
