@@ -19,20 +19,24 @@ defmodule Discordia.Game do
   @doc """
   The `player` plays a `card` and another turn is started.
   """
-  def play(game, player, card = %{color: "black", next: next}) when next != nil do
-    play(game, player, card, next)
-  end
   def play(_game, _player, %{color: "black"}) do
     {:error, "Must provide the next card color."}
   end
-  def play(game, player, card, _next \\ nil) do
+  def play(game, player, card, next \\ nil) do
     with  {:ok, _status} <- check_status(game, card),
           {:ok, _card} <- has_card(game, player, card),
           {:ok, _card} <- playable(game, card),
           {:ok, _player} <- allowed_to_play(game, player)
     do
       remove_card(game, player, card) # Remove card from player's hand
-      make_play(game, player, card) # Put card on the table
+
+      case card do
+        %{color: "black"} ->
+          make_play(game, player, card, next)
+        _ ->
+          make_play(game, player, card)
+      end
+
       turn(game) # This turn is over, next turn
       # TODO: If player has no more cards, the game is over.
       :ok
@@ -71,8 +75,7 @@ defmodule Discordia.Game do
   @doc false
   def playable(game, card) do
     current = current_card(game)
-    color = Map.get(current, :color)
-    value = Map.get(current, :value)
+    %{color: color, value: value} = current
     next = Map.get(current, :next)
 
     case card do

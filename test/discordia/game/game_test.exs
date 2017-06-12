@@ -15,9 +15,9 @@ defmodule Discordia.GameTest do
     {:ok, %{name: name, players: players, p1: p1, p2: p2}}
   end
 
-  defp set_card_and_play(game, player, card) do
+  defp set_card_and_play(game, player, card, next \\ nil) do
     Player.set_cards(game, player, [card])
-    :ok = Game.play(game, player, card)
+    :ok = Game.play(game, player, card, next)
   end
 
   test "first turn", game do
@@ -42,13 +42,13 @@ defmodule Discordia.GameTest do
   end
 
   test "playing a black card", game do
-    card = %{color: "black", value: "wildcard", next: nil}
+    card = %{color: "black", value: "wildcard"}
     assert {:error, _} = Game.play(game.name, game.p1, card)
     cards = Player.cards(game.name, game.p1) ++ [card]
     Player.set_cards(game.name, game.p1, cards)
-    :ok = Game.play(game.name, game.p1, %{card | next: "red"})
-    assert GameServer.current_card(game.name) == card
-    assert GameServer.current_card(game.name).next == "red"
+    :ok = Game.play(game.name, game.p1, card, next = "red")
+    assert GameServer.current_card(game.name) == Map.put(card, :next, "red")
+    assert GameServer.current_card(game.name).next == next
     refute card in Player.cards(game.name, game.p1)
     assert GameServer.current_player(game.name) == game.p2
   end
@@ -97,14 +97,14 @@ defmodule Discordia.GameTest do
       %{color: "red", value: "3"},
     ]
 
-    card = %{color: "black", value: "+4", next: "red"}
+    card = %{color: "black", value: "+4"}
 
     Player.set_cards(game.name, game.p1, cards ++ [card])
     Player.set_cards(game.name, game.p2,
         cards ++ [%{color: "blus", value: "1"}])
 
-    :ok = Game.play(game.name, game.p1, card)
-    assert GameServer.current_card(game.name) == card
+    :ok = Game.play(game.name, game.p1, card, "red")
+    assert GameServer.current_card(game.name) == Map.put(card, :next, "red")
     assert length(Player.cards(game.name, game.p2)) == @initial_cards + 4
     assert GameServer.current_player(game.name) == game.p1
     :ok = Game.play(game.name, game.p1, %{color: "red", value: "3"})
@@ -112,12 +112,12 @@ defmodule Discordia.GameTest do
 
     Player.set_cards(game.name, game.p1, cards ++ [card])
     Player.set_cards(game.name, game.p2, cards ++ [card])
-    :ok = Game.play(game.name, game.p2, card)
+    :ok = Game.play(game.name, game.p2, card, "red")
     assert length(Player.cards(game.name, game.p1)) == @initial_cards
     assert GameServer.current_player(game.name) == game.p1
     {:error, "Player must play a +4 card."} = Game.play(game.name, game.p1, %{color: "red", value: "3"})
     assert GameServer.current_player(game.name) == game.p1
-    :ok = Game.play(game.name, game.p1, card)
+    :ok = Game.play(game.name, game.p1, card, "red")
     assert GameServer.current_player(game.name) == game.p1
   end
 
@@ -142,9 +142,9 @@ defmodule Discordia.GameTest do
   end
 
   test "playing on top of a black card", game do
-    GameServer.put_card(game.name, %{color: "black", value: "+4", next: "red"})
+    GameServer.put_card(game.name, %{color: "black", value: "+4"}, "red")
     card = %{color: "red", value: "3"}
-    set_card_and_play(game.name, game.p1, card)
+    set_card_and_play(game.name, game.p1, card, "red")
     assert GameServer.current_card(game.name) == card
   end
 end

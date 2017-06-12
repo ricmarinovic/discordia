@@ -32,7 +32,6 @@ defmodule Discordia.Player do
     Enum.any?(cards, fn(card) -> Map.get(card, key) == value end)
   end
   def has_card(game, player, card) do
-    # TODO: handle the case that a player plays a black card
     if card in cards(game, player) do
       {:ok, card}
     else

@@ -12,7 +12,7 @@ defmodule Discordia.Dealer do
     end
 
     blacks = for value <- ["+4", "wildcard"], _color <- colors() do
-      %{value: value, color: "black", next: nil}
+      %{value: value, color: "black"}
     end
 
     deck = colored ++ colored ++ zeros ++ blacks
