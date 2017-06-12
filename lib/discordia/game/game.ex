@@ -37,6 +37,9 @@ defmodule Discordia.Game do
           make_play(game, player, card)
       end
 
+      if Enum.empty?(cards(game, player)) do
+        status(game, {:ended, player})
+      end
       turn(game) # This turn is over, next turn
       # TODO: If player has no more cards, the game is over.
       :ok
@@ -48,10 +51,13 @@ defmodule Discordia.Game do
   """
   def draw(game, player) do
     # TODO: Player can only draw 5 cards.
-    # TODO: Only the current player can draw.
-    [card] = draws(game, player)
+    # Only the current player can draw.
+    result = with {:ok, _player} <- allowed_to_play(game, player) do
+      [card] = draws(game, player)
+      {:ok, card}
+    end
     info(game, Mix.env) # TODO: Remove info
-    {:ok, card}
+    result
   end
 
   @doc false
