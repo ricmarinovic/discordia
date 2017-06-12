@@ -15,6 +15,11 @@ defmodule Discordia.GameTest do
     {:ok, %{name: name, players: players, p1: p1, p2: p2}}
   end
 
+  defp set_card_and_play(game, player, card) do
+    Player.set_cards(game, player, [card])
+    :ok = Game.play(game, player, card)
+  end
+
   test "first turn", game do
     @initial_cards = 7
     assert GameServer.current_player(game.name) == game.p1
@@ -36,18 +41,12 @@ defmodule Discordia.GameTest do
     assert length(GameServer.deck(game.name)) == 107
   end
 
-  test "initial black card", game do
-    card = %{color: "black", value: "wildcard", next: nil}
-    GameServer.put_card(game.name, card, "red")
-    assert GameServer.current_card(game.name) == %{card | next: "red"}
-  end
-
   test "playing a black card", game do
     card = %{color: "black", value: "wildcard", next: nil}
     assert {:error, _} = Game.play(game.name, game.p1, card)
-
-    card = %{color: "black", value: "wildcard", next: "red"}
-    :ok = Game.play(game.name, game.p1, card)
+    cards = Player.cards(game.name, game.p1) ++ [card]
+    Player.set_cards(game.name, game.p1, cards)
+    :ok = Game.play(game.name, game.p1, %{card | next: "red"})
     assert GameServer.current_card(game.name) == card
     assert GameServer.current_card(game.name).next == "red"
     refute card in Player.cards(game.name, game.p1)
@@ -60,15 +59,26 @@ defmodule Discordia.GameTest do
       ["p1", "p2", "p3", "p4"]
     Game.start(other_game, players)
 
-    Game.play(other_game, p1, %{color: "blue", value: "1"})
+    GameServer.put_card(other_game, %{color: "blue", value: "7"})
+
+    card = %{color: "blue", value: "1"}
+    set_card_and_play(other_game, p1, card)
     assert GameServer.current_player(other_game) == p2
-    Game.play(other_game, p2, %{color: "blue", value: "2"})
+
+    card = %{color: "blue", value: "2"}
+    set_card_and_play(other_game, p2, card)
     assert GameServer.current_player(other_game) == p3
-    Game.play(other_game, p3, %{color: "blue", value: "reverse"})
+
+    card = %{color: "blue", value: "reverse"}
+    set_card_and_play(other_game, p3, card)
     assert GameServer.current_player(other_game) == p2
-    Game.play(other_game, p2, %{color: "blue", value: "block"})
+
+    card = %{color: "blue", value: "block"}
+    set_card_and_play(other_game, p2, card)
     assert GameServer.current_player(other_game) == p4
-    Game.play(other_game, p4, %{color: "blue", value: "reverse"})
+
+    card = %{color: "blue", value: "reverse"}
+    set_card_and_play(other_game, p4, card)
     assert GameServer.current_player(other_game) == p1
     assert GameServer.player_queue(other_game) == players
   end
@@ -97,27 +107,44 @@ defmodule Discordia.GameTest do
     assert GameServer.current_card(game.name) == card
     assert length(Player.cards(game.name, game.p2)) == @initial_cards + 4
     assert GameServer.current_player(game.name) == game.p1
+    :ok = Game.play(game.name, game.p1, %{color: "red", value: "3"})
+    assert GameServer.current_player(game.name) == game.p2
 
     Player.set_cards(game.name, game.p1, cards ++ [card])
+    Player.set_cards(game.name, game.p2, cards ++ [card])
     :ok = Game.play(game.name, game.p2, card)
     assert length(Player.cards(game.name, game.p1)) == @initial_cards
+    assert GameServer.current_player(game.name) == game.p1
+    {:error, "Player must play a +4 card."} = Game.play(game.name, game.p1, %{color: "red", value: "3"})
+    assert GameServer.current_player(game.name) == game.p1
+    :ok = Game.play(game.name, game.p1, card)
+    assert GameServer.current_player(game.name) == game.p1
   end
 
   test "block with two players", game do
+    GameServer.put_card(game.name, %{color: "blue", value: "7"})
+
     card = %{color: "blue", value: "3"}
-    :ok = Game.play(game.name, game.p1, card)
+    set_card_and_play(game.name, game.p1, card)
     assert GameServer.current_player(game.name) == game.p2
 
     card = %{color: "blue", value: "4"}
-    :ok = Game.play(game.name, game.p2, card)
+    set_card_and_play(game.name, game.p2, card)
     assert GameServer.current_player(game.name) == game.p1
 
-    card = %{color: "red", value: "block"}
-    :ok = Game.play(game.name, game.p1, card)
+    card = %{color: "blue", value: "block"}
+    set_card_and_play(game.name, game.p1, card)
     assert GameServer.current_player(game.name) == game.p1
 
-    card = %{color: "red", value: "reverse"}
-    :ok = Game.play(game.name, game.p1, card)
+    card = %{color: "blue", value: "reverse"}
+    set_card_and_play(game.name, game.p1, card)
     assert GameServer.current_player(game.name) == game.p2
+  end
+
+  test "playing on top of a black card", game do
+    GameServer.put_card(game.name, %{color: "black", value: "+4", next: "red"})
+    card = %{color: "red", value: "3"}
+    set_card_and_play(game.name, game.p1, card)
+    assert GameServer.current_card(game.name) == card
   end
 end

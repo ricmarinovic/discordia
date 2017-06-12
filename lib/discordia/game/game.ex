@@ -26,27 +26,80 @@ defmodule Discordia.Game do
     {:error, "Must provide the next card color."}
   end
   def play(game, player, card, _next \\ nil) do
-    # TODO: Check if game is over
-    # TODO: Check if player must play a +2/+4 card. (status :plus_hold)
-    # TODO: Check if card is on player's hand
-    # TODO: Check if card is playable (same color or value)
-    # TODO: Check if player is current player. Will be dropped when cutting
-    #       is allowed
-
-    remove_card(game, player, card) # Remove card from player's hand
-    make_play(game, player, card) # Put card on the table
-
-    turn(game) # This turn is over, next turn
-    :ok
+    with  {:ok, _status} <- check_status(game, card),
+          {:ok, _card} <- has_card(game, player, card),
+          {:ok, _card} <- playable(game, card),
+          {:ok, _player} <- allowed_to_play(game, player)
+    do
+      remove_card(game, player, card) # Remove card from player's hand
+      make_play(game, player, card) # Put card on the table
+      turn(game) # This turn is over, next turn
+      # TODO: If player has no more cards, the game is over.
+      :ok
+    end
   end
 
   @doc """
   The `player` draws a card from the deck. It is still his turn.
   """
   def draw(game, player) do
+    # TODO: Player can only draw 5 cards.
+    # TODO: Only the current player can draw.
     [card] = draws(game, player)
     info(game, Mix.env) # TODO: Remove info
     {:ok, card}
+  end
+
+  @doc false
+  def check_status(game, card) do
+    status = status(game) # {:plus_hold, +2}
+    value = card.value
+
+    case status do
+      {:plus_hold, ^value} ->
+        status(game, {:started, :normal})
+        {:ok, status}
+      {:plus_hold, status_value} ->
+        {:error, "Player must play a #{status_value} card."}
+      {:ended, _} ->
+        {:error, "Game is over."}
+      {_, _} ->
+        {:ok, status}
+    end
+  end
+
+  @doc false
+  def playable(game, card) do
+    current = current_card(game)
+    color = Map.get(current, :color)
+    value = Map.get(current, :value)
+    next = Map.get(current, :next)
+
+    case card do
+      %{color: "black"} ->
+        {:ok, card}
+      %{value: ^value} ->
+        {:ok, card}
+      %{color: ^color} ->
+        {:ok, card}
+      %{color: ^next} ->
+        {:ok, card}
+      _ ->
+        {:error, "Card does not match."}
+    end
+  end
+
+  # TODO: Check if player is current player. Will be dropped when cutting
+  #       is allowed
+  @doc false
+  def allowed_to_play(game, player) do
+    current = current_player(game)
+
+    if player === current do
+      {:ok, player}
+    else
+      {:error, "Not this player's turn."}
+    end
   end
 
   defp turn(game, :first) do

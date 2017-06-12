@@ -24,7 +24,7 @@ defmodule Discordia.GameServer do
         card: nil,
         player: nil,
       }],
-      status: :started
+      status: {:started, :normal}
     }
 
     {:ok, state}
@@ -54,11 +54,10 @@ defmodule Discordia.GameServer do
 
   def draw_card(game), do: GenServer.call(via(game), :draw_card)
 
-  def put_card(game, card, next \\ nil) do
+  def put_card(game, card) do
     case card do
-      %{color: "black"} ->
-        next = next || Dealer.initial_color()
-        GenServer.cast(via(game), {:put_card, %{card | next: next}})
+      %{color: "black", next: nil} ->
+        GenServer.cast(via(game), {:put_card,  Map.put(card, :next, Dealer.initial_color())})
       _ ->
         GenServer.cast(via(game), {:put_card, card})
     end
@@ -70,9 +69,12 @@ defmodule Discordia.GameServer do
         reverse(game)
       %{value: "block"} ->
         block(game)
-      %{value: value = "+" <> quantity} ->
-        if Player.has_card(game, next = whois_next(game), value: value) do
+      %{value: value = ("+" <> quantity)} ->
+        next = whois_next(game)
+
+        if Player.has_card(game, next, value: value) do
           status(game, {:plus_hold, value})
+          next_player(game)
         else
           Player.draws(game, next, String.to_integer(quantity))
           block(game)
