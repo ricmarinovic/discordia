@@ -37,12 +37,13 @@ defmodule Discordia.Game do
           make_play(game, player, card)
       end
 
+      info(game, Mix.env)
+
       if Enum.empty?(cards(game, player)) do
-        status(game, {:ended, player})
+        turn(game, {:ended, player})
       end
-      turn(game) # This turn is over, next turn
-      # TODO: If player has no more cards, the game is over.
-      :ok
+
+      {:ok, card}
     end
   end
 
@@ -122,19 +123,24 @@ defmodule Discordia.Game do
 
     info(game, Mix.env) # TODO: Remove info
   end
-  defp turn(game) do
-    info(game, Mix.env) # TODO: Remove info
+  defp turn(game, status = {:ended, _player}) do
+    status(game, status)
+    status
   end
 
-  def info(game, env) when env == :dev do # TODO: Remove info
-    IO.puts "\nTurn #{current_turn(game)}"
-    IO.puts "Current card: "
-    IO.inspect current_card(game)
-    current_player = current_player(game)
-    IO.puts "Current player *#{current_player}* cards:"
-    IO.inspect(cards(game, current_player))
-
-    :ok
+  # TODO: Remove info
+  def info(game, env) when env == :dev do
+    case status(game) do
+      {:ended, _} ->
+        IO.puts "Game is over."
+      _ ->
+        IO.puts "\nTurn #{current_turn(game)}"
+        IO.puts "Current card: "
+        IO.inspect current_card(game)
+        current_player = current_player(game)
+        IO.puts "Current player *#{current_player}* cards:"
+        IO.inspect(cards(game, current_player))
+    end
   end
   def info(_game, _env), do: nil
 end
