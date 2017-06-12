@@ -28,11 +28,11 @@ defmodule Discordia.GameTest do
   end
 
   test "cracking up a new deck", game do
-    Player.player_draws(game.name, game.p1, 93)
+    Player.draws(game.name, game.p1, 93)
     assert length(Player.cards(game.name, game.p1)) == @initial_cards + 93
     assert length(GameServer.deck(game.name)) == 0
 
-    Player.player_draws(game.name, game.p1)
+    Player.draws(game.name, game.p1)
     assert length(GameServer.deck(game.name)) == 107
   end
 
@@ -47,13 +47,14 @@ defmodule Discordia.GameTest do
     assert {:error, _} = Game.play(game.name, game.p1, card)
 
     card = %{color: "black", value: "wildcard", next: "red"}
-    Game.play(game.name, game.p1, card)
+    :ok = Game.play(game.name, game.p1, card)
     assert GameServer.current_card(game.name) == card
+    assert GameServer.current_card(game.name).next == "red"
     refute card in Player.cards(game.name, game.p1)
     assert GameServer.current_player(game.name) == game.p2
   end
 
-  test "playing reverse card" do
+  test "playing reverse and block cards" do
     other_game = "other game"
     players = [p1, p2, p3, p4] =
       ["p1", "p2", "p3", "p4"]
@@ -70,5 +71,53 @@ defmodule Discordia.GameTest do
     Game.play(other_game, p4, %{color: "blue", value: "reverse"})
     assert GameServer.current_player(other_game) == p1
     assert GameServer.player_queue(other_game) == players
+  end
+
+  test "playing +2 and +4 cards", game do
+    assert GameServer.whois_next(game.name) == game.p2
+    assert length(Player.cards(game.name, game.p1)) == @initial_cards
+    assert length(Player.cards(game.name, game.p2)) == @initial_cards
+
+    cards = [
+      %{color: "red", value: "3"},
+      %{color: "red", value: "6"},
+      %{color: "yellow", value: "4"},
+      %{color: "red", value: "1"},
+      %{color: "red", value: "2"},
+      %{color: "red", value: "3"},
+    ]
+
+    card = %{color: "black", value: "+4", next: "red"}
+
+    Player.set_cards(game.name, game.p1, cards ++ [card])
+    Player.set_cards(game.name, game.p2,
+        cards ++ [%{color: "blus", value: "1"}])
+
+    :ok = Game.play(game.name, game.p1, card)
+    assert GameServer.current_card(game.name) == card
+    assert length(Player.cards(game.name, game.p2)) == @initial_cards + 4
+    assert GameServer.current_player(game.name) == game.p1
+
+    Player.set_cards(game.name, game.p1, cards ++ [card])
+    :ok = Game.play(game.name, game.p2, card)
+    assert length(Player.cards(game.name, game.p1)) == @initial_cards
+  end
+
+  test "block with two players", game do
+    card = %{color: "blue", value: "3"}
+    :ok = Game.play(game.name, game.p1, card)
+    assert GameServer.current_player(game.name) == game.p2
+
+    card = %{color: "blue", value: "4"}
+    :ok = Game.play(game.name, game.p2, card)
+    assert GameServer.current_player(game.name) == game.p1
+
+    card = %{color: "red", value: "block"}
+    :ok = Game.play(game.name, game.p1, card)
+    assert GameServer.current_player(game.name) == game.p1
+
+    card = %{color: "red", value: "reverse"}
+    :ok = Game.play(game.name, game.p1, card)
+    assert GameServer.current_player(game.name) == game.p2
   end
 end

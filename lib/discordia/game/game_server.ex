@@ -5,7 +5,7 @@ defmodule Discordia.GameServer do
 
   use GenServer
 
-  alias Discordia.Dealer
+  alias Discordia.{Player, Dealer}
 
   def start_link(game, players) do
     {:ok, _} = GenServer.start_link(__MODULE__, [game, players],
@@ -23,7 +23,8 @@ defmodule Discordia.GameServer do
         turn: 0,
         card: nil,
         player: nil,
-      }]
+      }],
+      status: :started
     }
 
     {:ok, state}
@@ -38,6 +39,8 @@ defmodule Discordia.GameServer do
   def current_player(game), do: GenServer.call(via(game), :current_player)
 
   def next_player(game), do: GenServer.call(via(game), :next_player)
+
+  def whois_next(game), do: GenServer.call(via(game), :whois_next)
 
   def reverse(game), do: GenServer.cast(via(game), :reverse)
 
@@ -61,12 +64,19 @@ defmodule Discordia.GameServer do
     end
   end
 
-  def play_card(game, player, card) do
+  def make_play(game, player, card) do
     case card do
       %{value: "reverse"} ->
         reverse(game)
       %{value: "block"} ->
         block(game)
+      %{value: value = "+" <> quantity} ->
+        if Player.has_card(game, next = whois_next(game), value: value) do
+          status(game, {:plus_hold, value})
+        else
+          Player.draws(game, next, String.to_integer(quantity))
+          block(game)
+        end
       _ ->
         next_player(game)
     end
@@ -77,7 +87,7 @@ defmodule Discordia.GameServer do
       player: player,
     }
 
-    GenServer.cast(via(game), {:play_card, play})
+    GenServer.cast(via(game), {:make_play, play})
   end
 
   # Turn
@@ -85,6 +95,9 @@ defmodule Discordia.GameServer do
   def current_turn(game), do: GenServer.call(via(game), :turn)
 
   def history(game), do: GenServer.call(via(game), :history)
+
+  def status(game), do: GenServer.call(via(game), :status)
+  def status(game, new_status), do: GenServer.cast(via(game), {:status, new_status})
 
   # Callbacks
 
@@ -100,6 +113,9 @@ defmodule Discordia.GameServer do
   def handle_call(:next_player, _from, state = %{player_queue: [prev | rest]}) do
     [next | _] = rest
     {:reply, next, %{state | player_queue: rest ++ [prev]}}
+  end
+  def handle_call(:whois_next, _from, state = %{player_queue: [_, next | _]}) do
+    {:reply, next, state}
   end
   def handle_call(:current_card, _from, state = %{history: [last | _]}) do
     {:reply, last.card, state}
@@ -120,9 +136,12 @@ defmodule Discordia.GameServer do
   def handle_call(:history, _from, state = %{history: history}) do
     {:reply, history, state}
   end
+  def handle_call(:status, _from, state = %{status: status}) do
+    {:reply, status, state}
+  end
 
   def handle_cast(:reverse, state = %{player_queue: queue}) do
-    {:noreply, %{state | player_queue: Enum.reverse(queue) }}
+    {:noreply, %{state | player_queue: Enum.reverse(queue)}}
   end
   def handle_cast(:block, state = %{player_queue: queue}) do
     [current, blocked | rest] = queue
@@ -131,7 +150,10 @@ defmodule Discordia.GameServer do
   def handle_cast({:put_card, card}, state = %{history: [last | rest]}) do
     {:noreply, %{state | history: [%{last | card: card} | rest]}}
   end
-  def handle_cast({:play_card, play}, state = %{history: old}) do
+  def handle_cast({:make_play, play}, state = %{history: old}) do
     {:noreply, %{state | history: [play | old]}}
+  end
+  def handle_cast({:status, new_status}, state) do
+    {:noreply, %{state | status: new_status}}
   end
 end

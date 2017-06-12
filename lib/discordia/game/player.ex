@@ -16,7 +16,7 @@ defmodule Discordia.Player do
 
   def cards(game, player), do: GenServer.call(via(game, player), :cards)
 
-  def player_draws(game, player, quantity \\ 1) do
+  def draws(game, player, quantity \\ 1) do
     for _ <- 1..quantity do
       GenServer.call(via(game, player),
         {:put_card, GameServer.draw_card(game)})
@@ -25,6 +25,17 @@ defmodule Discordia.Player do
 
   def remove_card(game, player, card) do
     GenServer.cast(via(game, player), {:remove_card, card})
+  end
+
+  def has_card(game, player, [{key, value}]) do
+    cards = cards(game, player)
+    Enum.any?(cards, fn(card) -> Map.get(card, key) == value end)
+  end
+
+  # TODO: Remove! For tests only
+  @doc false
+  def set_cards(game, player, cards) do
+    GenServer.cast(via(game, player), {:set_cards, cards})
   end
 
   # Callbacks
@@ -38,5 +49,9 @@ defmodule Discordia.Player do
 
   def handle_cast({:remove_card, card}, state) do
     {:noreply, %{state | cards: state.cards -- [card]}}
+  end
+  # TODO: Remove! For tests only
+  def handle_cast({:set_cards, cards}, _state) do
+    {:noreply, %{cards: cards}}
   end
 end

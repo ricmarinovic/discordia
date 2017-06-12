@@ -19,27 +19,34 @@ defmodule Discordia.Game do
   @doc """
   The `player` plays a `card` and another turn is started.
   """
-  def play(_game, _player, %{color: "black", next: nil}) do
+  def play(game, player, card = %{color: "black", next: next}) when next != nil do
+    play(game, player, card, next)
+  end
+  def play(_game, _player, %{color: "black"}) do
     {:error, "Must provide the next card color."}
   end
-  def play(game, player, card) do
-    # Put card on the table
-    play_card(game, player, card)
+  def play(game, player, card, _next \\ nil) do
+    # TODO: Check if game is over
+    # TODO: Check if player must play a +2/+4 card. (status :plus_hold)
+    # TODO: Check if card is on player's hand
+    # TODO: Check if card is playable (same color or value)
+    # TODO: Check if player is current player. Will be dropped when cutting
+    #       is allowed
 
-    # Remove card from player's hand
-    remove_card(game, player, card)
+    remove_card(game, player, card) # Remove card from player's hand
+    make_play(game, player, card) # Put card on the table
 
-    # This turn is over, next turn
-    turn(game)
+    turn(game) # This turn is over, next turn
+    :ok
   end
 
   @doc """
   The `player` draws a card from the deck. It is still his turn.
   """
   def draw(game, player) do
-    [card] = player_draws(game, player)
-    info(game, Mix.env)
-    card
+    [card] = draws(game, player)
+    info(game, Mix.env) # TODO: Remove info
+    {:ok, card}
   end
 
   defp turn(game, :first) do
@@ -48,19 +55,19 @@ defmodule Discordia.Game do
 
     # Each player gets 7 cards
     for player <- players(game) do
-      player_draws(game, player, @initial_cards)
+      draws(game, player, @initial_cards)
     end
 
-    info(game, Mix.env)
+    info(game, Mix.env) # TODO: Remove info
   end
   defp turn(game) do
-    info(game, Mix.env)
+    info(game, Mix.env) # TODO: Remove info
   end
 
-  def info(game, env) when env == :dev do
+  def info(game, env) when env == :dev do # TODO: Remove info
     IO.puts "\nTurn #{current_turn(game)}"
-    current_card = current_card(game)
-    IO.puts "Current card: #{current_card.value} #{current_card.color}"
+    IO.puts "Current card: "
+    IO.inspect current_card(game)
     current_player = current_player(game)
     IO.puts "Current player *#{current_player}* cards:"
     IO.inspect(cards(game, current_player))
