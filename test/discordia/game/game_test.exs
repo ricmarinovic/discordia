@@ -23,7 +23,7 @@ defmodule Discordia.GameTest do
         %{color: "yellow", value: "4"},
         %{color: "red", value: "1"},
         %{color: "blue", value: "2"},
-        %{color: "red", value: "3"},
+        %{color: "yellow", value: "6"},
       ]
     }
 
@@ -39,7 +39,7 @@ defmodule Discordia.GameTest do
   test "drawing cards", game do
     {:ok, _card} = Game.draw(game.name, game.p1)
     assert length(Player.cards(game.name, game.p1)) == @initial_cards + 1
-    {:error, _} = Game.draw(game.name, game.p2)
+    {:error, _} = Game.draw(game.name, game.p1)
     assert length(Player.cards(game.name, game.p2)) == @initial_cards
   end
 
@@ -117,7 +117,8 @@ defmodule Discordia.GameTest do
       %{color: "yellow", value: "4"},
       %{color: "red", value: "1"},
       %{color: "red", value: "2"},
-      %{color: "red", value: "3"},
+      %{color: "blue", value: "3"},
+      %{color: "green", value: "9"}
     ]
 
     card = %{color: "black", value: "+4"}
@@ -128,7 +129,7 @@ defmodule Discordia.GameTest do
 
     {:ok, ^card} = Game.play(game.name, game.p1, card, "red")
     assert GameServer.current_card(game.name) == Map.put(card, :next, "red")
-    assert length(Player.cards(game.name, game.p2)) == @initial_cards + 4
+    assert length(Player.cards(game.name, game.p2)) == @initial_cards + 1 + 4
     assert GameServer.current_player(game.name) == game.p1
     {:ok, _} = Game.play(game.name, game.p1, %{color: "red", value: "3"})
     assert GameServer.current_player(game.name) == game.p2
@@ -136,7 +137,7 @@ defmodule Discordia.GameTest do
     Player.set_cards(game.name, game.p1, cards ++ [card])
     Player.set_cards(game.name, game.p2, cards ++ [card])
     {:ok, ^card} = Game.play(game.name, game.p2, card, "red")
-    assert length(Player.cards(game.name, game.p1)) == @initial_cards
+    assert length(Player.cards(game.name, game.p1)) == @initial_cards + 1
     assert GameServer.current_player(game.name) == game.p1
     {:error, "Player must play a +4 card."} = Game.play(game.name, game.p1, %{color: "red", value: "3"})
     assert GameServer.current_player(game.name) == game.p1
@@ -176,5 +177,24 @@ defmodule Discordia.GameTest do
     card = %{color: "blue", value: "8"}
     Player.set_cards(game.name, game.p2, game.cards ++ [card])
     {:error, _} = Game.play(game.name, game.p2, card)
+  end
+
+  test "play black on top of black", game do
+    GameServer.put_card(game.name, %{color: "black", value: "wildcard"}, "red")
+    card = %{color: "black", value: "+4"}
+    Player.set_cards(game.name, game.p1, game.cards ++ [card])
+    {:ok, ^card} = Game.play(game.name, game.p1, card, "blue")
+    assert GameServer.current_card(game.name) == Map.put(card, :next, "blue")
+  end
+
+  test "accumulating +2/+4", game do
+    GameServer.put_card(game.name, %{color: "blue", value: "3"})
+    card = %{color: "blue", value: "+2"}
+    Player.set_cards(game.name, game.p1, game.cards ++ [card])
+    Player.set_cards(game.name, game.p2, game.cards ++ [card])
+    {:ok, _card} = Game.play(game.name, game.p1, card)
+    assert GameServer.current_player(game.name) == game.p2
+    {:ok, _card} = Game.play(game.name, game.p2, card)
+    assert length(Player.cards(game.name, game.p1)) == 7+4
   end
 end

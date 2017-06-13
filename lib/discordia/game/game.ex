@@ -24,9 +24,9 @@ defmodule Discordia.Game do
   end
   def play(game, player, card, next \\ nil) do
     with  {:ok, _status} <- check_status(game, card),
-          {:ok, _card} <- has_card(game, player, card),
-          {:ok, _card} <- playable(game, card),
-          {:ok, _player} <- allowed_to_play(game, player)
+          {:ok, _player} <- allowed_to_play(game, player),
+          {:ok, _card}   <- has_card(game, player, card),
+          {:ok, _card}   <- playable(game, card)
     do
       remove_card(game, player, card) # Remove card from player's hand
 
@@ -55,6 +55,7 @@ defmodule Discordia.Game do
     # Only the current player can draw.
     result = with {:ok, _player} <- allowed_to_play(game, player) do
       [card] = draws(game, player)
+      next_player(game)
       {:ok, card}
     end
     info(game, Mix.env) # TODO: Remove info
@@ -66,6 +67,7 @@ defmodule Discordia.Game do
     status = status(game) # {:plus_hold, +2}
     value = card.value
 
+    # TODO: accumulate +2/+4 cards
     case status do
       {:plus_hold, ^value} ->
         status(game, {:started, :normal})
@@ -141,6 +143,8 @@ defmodule Discordia.Game do
         IO.puts "Current player *#{current_player}* cards:"
         IO.inspect(cards(game, current_player))
     end
+
+    :ok
   end
   def info(_game, _env), do: nil
 end
