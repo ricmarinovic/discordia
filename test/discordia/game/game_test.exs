@@ -24,6 +24,7 @@ defmodule Discordia.GameTest do
         %{color: "red", value: "1"},
         %{color: "blue", value: "2"},
         %{color: "yellow", value: "6"},
+        %{color: "blue", value: "6"},
       ]
     }
 
@@ -104,6 +105,8 @@ defmodule Discordia.GameTest do
     {:ok, ^card} = Game.play(game_name, p4, card)
     assert GameServer.current_player(game_name) == p1
     assert GameServer.player_queue(game_name) == players
+
+    RoomSupervisor.stop(game_name)
   end
 
   test "playing +2 and +4 cards", game do
@@ -187,14 +190,54 @@ defmodule Discordia.GameTest do
     assert GameServer.current_card(game.name) == Map.put(card, :next, "blue")
   end
 
-  test "accumulating +2/+4", game do
+  test "accumulating +2 cards", game do
     GameServer.put_card(game.name, %{color: "blue", value: "3"})
     card = %{color: "blue", value: "+2"}
     Player.set_cards(game.name, game.p1, game.cards ++ [card])
     Player.set_cards(game.name, game.p2, game.cards ++ [card])
+
     {:ok, _card} = Game.play(game.name, game.p1, card)
     assert GameServer.current_player(game.name) == game.p2
     {:ok, _card} = Game.play(game.name, game.p2, card)
     assert length(Player.cards(game.name, game.p1)) == 7+4
+  end
+
+  test "accumulating +4 cards", game do
+    card = %{color: "black", value: "+4"}
+    next = "red"
+
+    game_name = "other game"
+    players = [p1, p2, p3, p4, p5] = ["eu", "tu", "ele", "nos", "vos"]
+    Game.start(game_name, players)
+    set_cards(game_name, players, game.cards ++ [card])
+
+
+    {:ok, _card} = Game.play(game_name, p1, card, next)
+    assert GameServer.current_player(game_name) == p2
+    assert length(Player.cards(game_name, p2)) == @initial_cards + 1
+
+    {:ok, _card} = Game.play(game_name, p2, card, next)
+    assert GameServer.current_player(game_name) == p3
+    assert length(Player.cards(game_name, p3)) == @initial_cards + 1
+
+    {:ok, _card} = Game.play(game_name, p3, card, next)
+    assert GameServer.current_player(game_name) == p4
+    assert length(Player.cards(game_name, p4)) == @initial_cards + 1
+
+    {:ok, _card} = Game.play(game_name, p4, card, next)
+    assert GameServer.current_player(game_name) == p5
+    assert length(Player.cards(game_name, p5)) == @initial_cards + 1
+
+    {:ok, _card} = Game.play(game_name, p5, card, next)
+    assert GameServer.current_player(game_name) == p2
+    assert length(Player.cards(game_name, p1)) == @initial_cards + 4*5
+
+    RoomSupervisor.stop(game_name)
+  end
+
+  defp set_cards(game, players, cards) do
+    for player <- players do
+      Player.set_cards(game, player, cards)
+    end
   end
 end

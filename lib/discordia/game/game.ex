@@ -24,9 +24,9 @@ defmodule Discordia.Game do
   end
   def play(game, player, card, next \\ nil) do
     with  {:ok, _status} <- check_status(game, card),
+      {:ok, _card} <- has_card(game, player, card),
           {:ok, _player} <- allowed_to_play(game, player),
-          {:ok, _card}   <- has_card(game, player, card),
-          {:ok, _card}   <- playable(game, card)
+          {:ok, _card} <- playable(game, card)
     do
       remove_card(game, player, card) # Remove card from player's hand
 
@@ -37,11 +37,11 @@ defmodule Discordia.Game do
           make_play(game, player, card)
       end
 
-      info(game, Mix.env)
-
       if Enum.empty?(cards(game, player)) do
         turn(game, {:ended, player})
       end
+
+      info(game, Mix.env)
 
       {:ok, card}
     end
@@ -67,12 +67,11 @@ defmodule Discordia.Game do
     status = status(game) # {:plus_hold, +2}
     value = card.value
 
-    # TODO: accumulate +2/+4 cards
+    # TODO: sum up +2/+4 cards
     case status do
-      {:plus_hold, ^value} ->
-        status(game, {:started, :normal})
+      {:plus_hold, ^value, _} ->
         {:ok, status}
-      {:plus_hold, status_value} ->
+      {:plus_hold, status_value, _} ->
         {:error, "Player must play a #{status_value} card."}
       {:ended, _} ->
         {:error, "Game is over."}

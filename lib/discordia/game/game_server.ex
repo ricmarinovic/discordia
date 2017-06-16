@@ -71,16 +71,8 @@ defmodule Discordia.GameServer do
         reverse(game)
       %{value: "block"} ->
         block(game)
-      %{value: value = ("+" <> quantity)} ->
-        next = whois_next(game)
-
-        if Player.has_card(game, next, value: value) do
-          status(game, {:plus_hold, value})
-          next_player(game)
-        else
-          Player.draws(game, next, String.to_integer(quantity))
-          block(game)
-        end
+      %{value: value = "+" <> quantity} ->
+        plus_card(game, value, String.to_integer(quantity))
       _ ->
         next_player(game)
     end
@@ -92,6 +84,29 @@ defmodule Discordia.GameServer do
     }
 
     GenServer.cast(via(game), {:make_play, play})
+  end
+
+  defp plus_card(game, value, quantity) do
+    next_player = whois_next(game)
+
+    if Player.has_card(game, next_player, value: value) do
+      case status(game) do
+        {:plus_hold, ^value, acc} ->
+          status(game, {:plus_hold, value, quantity + acc})
+        _ ->
+          status(game, {:plus_hold, value, quantity})
+      end
+      next_player(game)
+    else
+      case status(game) do
+        {:plus_hold, ^value, acc} ->
+          Player.draws(game, next_player, quantity + acc)
+        _ ->
+          Player.draws(game, next_player, quantity)
+      end
+      status(game, {:started, :normal})
+      block(game)
+    end
   end
 
   # Turn
