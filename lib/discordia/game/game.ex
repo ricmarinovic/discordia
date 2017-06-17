@@ -13,7 +13,7 @@ defmodule Discordia.Game do
   """
   def start(name, players) do
     {:ok, _} = Supervisor.start_child(Discordia.GameSupervisor, [name, players])
-    turn(name, :first)
+    first_turn(name)
   end
 
   @doc """
@@ -22,11 +22,11 @@ defmodule Discordia.Game do
   def play(_game, _player, %{color: "black"}) do
     {:error, "Must provide the next card color."}
   end
+
   def play(game, player, card, next \\ nil) do
     with  {:ok, _status} <- check_status(game, card),
-      {:ok, _card} <- has_card(game, player, card),
-          {:ok, _player} <- allowed_to_play(game, player),
-          {:ok, _card} <- playable(game, card)
+          {:ok, _player} <- allowed_to_play(game, player, card),
+          {:ok, _card}   <- has_card(game, player, card)
     do
       remove_card(game, player, card) # Remove card from player's hand
 
@@ -38,10 +38,11 @@ defmodule Discordia.Game do
       end
 
       if Enum.empty?(cards(game, player)) do
-        turn(game, {:ended, player})
+        status(game, {:ended, player})
+        # :ok = Discordia.RoomSupervisor.stop(game)
       end
 
-      info(game, Mix.env)
+      info(game, Mix.env) # TODO: Remove info
 
       {:ok, card}
     end
@@ -51,23 +52,18 @@ defmodule Discordia.Game do
   The `player` draws a card from the deck. It is still his turn.
   """
   def draw(game, player) do
-    # TODO: Player can only draw 5 cards.
-    # Only the current player can draw.
-    result = with {:ok, _player} <- allowed_to_play(game, player) do
+    with {:ok, _player} <- allowed_to_draw(game, player) do
       [card] = draws(game, player)
       next_player(game)
+      info(game, Mix.env) # TODO: Remove info
       {:ok, card}
     end
-    info(game, Mix.env) # TODO: Remove info
-    result
   end
 
-  @doc false
-  def check_status(game, card) do
+  defp check_status(game, card) do
     status = status(game) # {:plus_hold, +2}
     value = card.value
 
-    # TODO: sum up +2/+4 cards
     case status do
       {:plus_hold, ^value, _} ->
         {:ok, status}
@@ -80,40 +76,41 @@ defmodule Discordia.Game do
     end
   end
 
-  @doc false
-  def playable(game, card) do
-    current = current_card(game)
-    %{color: color, value: value} = current
-    next = Map.get(current, :next)
+  defp allowed_to_play(game, player, card) do
+    current_player = current_player(game)
+    current_card = current_card(game)
+    %{color: color, value: value} = current_card
+    next = Map.get(current_card, :next)
 
-    case card do
-      %{color: "black"} ->
+    case {player, card} do
+      {^current_player, %{color: "black"}} ->
         {:ok, card}
-      %{value: ^value} ->
+      {^current_player, %{value: ^value}} ->
         {:ok, card}
-      %{color: ^color} ->
+      {^current_player, %{color: ^color}} ->
         {:ok, card}
-      %{color: ^next} ->
+      {^current_player, %{color: ^next}} ->
         {:ok, card}
-      _ ->
+      {_, %{value: ^value, color: ^color}} ->
+        cut(game, player)
+        {:ok, card}
+      {^current_player, _} ->
         {:error, "Card does not match."}
+      _ ->
+        {:error, "Not this player's turn."}
     end
   end
 
-  # TODO: Check if player is current player. Will be dropped when cutting
-  #       is allowed
-  @doc false
-  def allowed_to_play(game, player) do
-    current = current_player(game)
-
-    if player === current do
-      {:ok, player}
-    else
-      {:error, "Not this player's turn."}
+  defp allowed_to_draw(game, player) do
+    case current_player(game) do
+      ^player ->
+        {:ok, player}
+      _ ->
+        {:error, "Not this player's turn."}
     end
   end
 
-  defp turn(game, :first) do
+  defp first_turn(game) do
     # Draw and put the first card on the table
     put_card(game, draw_card(game))
 
@@ -124,26 +121,26 @@ defmodule Discordia.Game do
 
     info(game, Mix.env) # TODO: Remove info
   end
-  defp turn(game, status = {:ended, _player}) do
-    status(game, status)
-    status
-  end
 
   # TODO: Remove info
-  def info(game, env) when env == :dev do
+  defp info(game, env) when env == :dev do
     case status(game) do
-      {:ended, _} ->
-        IO.puts "Game is over."
+      {:ended, player} ->
+        IO.puts "Game is over. Winner: #{player}"
+        :ok = Discordia.RoomSupervisor.stop(game)
       _ ->
         IO.puts "\nTurn #{current_turn(game)}"
         IO.puts "Current card: "
         IO.inspect current_card(game)
         current_player = current_player(game)
-        IO.puts "Current player *#{current_player}* cards:"
-        IO.inspect(cards(game, current_player))
+        IO.puts "Current player #{current_player}"
+        for player <- players(game) do
+          IO.puts "Player #{player}: #{length cards(game, player)} cards"
+          IO.inspect cards(game, player)
+        end
     end
 
     :ok
   end
-  def info(_game, _env), do: nil
+  defp info(_game, _env), do: nil
 end

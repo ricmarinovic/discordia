@@ -46,6 +46,8 @@ defmodule Discordia.GameServer do
 
   def block(game), do: GenServer.cast(via(game), :block)
 
+  def cut(game, player), do: GenServer.cast(via(game), {:cut, player})
+
   # Deck
 
   def deck(game), do: GenServer.call(via(game), :deck)
@@ -62,9 +64,10 @@ defmodule Discordia.GameServer do
     GenServer.cast(via(game), {:put_card, card})
   end
 
-  def make_play(game, player, card = %{color: "black"}, next) do
+  def make_play(game, player, card, next) do
     make_play(game, player, Map.put(card, :next, next))
   end
+
   def make_play(game, player, card) do
     case card do
       %{value: "reverse"} ->
@@ -165,6 +168,13 @@ defmodule Discordia.GameServer do
   def handle_cast(:block, state = %{player_queue: queue}) do
     [current, blocked | rest] = queue
     {:noreply, %{state | player_queue: rest ++ [current, blocked]}}
+  end
+  def handle_cast({:cut, player}, state = %{player_queue: queue}) do
+    {back, front} =
+      queue
+      |> Enum.split(Enum.find_index(queue, &(&1 == player)))
+
+    {:noreply, %{state | player_queue: front ++ back}}
   end
   def handle_cast({:put_card, card}, state = %{history: [last | rest]}) do
     {:noreply, %{state | history: [%{last | card: card} | rest]}}

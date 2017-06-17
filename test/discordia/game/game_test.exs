@@ -24,7 +24,7 @@ defmodule Discordia.GameTest do
         %{color: "red", value: "1"},
         %{color: "blue", value: "2"},
         %{color: "yellow", value: "6"},
-        %{color: "blue", value: "6"},
+        %{color: "blue", value: "2"},
       ]
     }
 
@@ -42,6 +42,8 @@ defmodule Discordia.GameTest do
     assert length(Player.cards(game.name, game.p1)) == @initial_cards + 1
     {:error, _} = Game.draw(game.name, game.p1)
     assert length(Player.cards(game.name, game.p2)) == @initial_cards
+    assert GameServer.current_player(game.name) == game.p2
+    {:error, "Not this player's turn."} = Game.draw(game.name, game.p1)
   end
 
   test "cracking up a new deck", game do
@@ -106,7 +108,7 @@ defmodule Discordia.GameTest do
     assert GameServer.current_player(game_name) == p1
     assert GameServer.player_queue(game_name) == players
 
-    RoomSupervisor.stop(game_name)
+    :ok = RoomSupervisor.stop(game_name)
   end
 
   test "playing +2 and +4 cards", game do
@@ -232,7 +234,25 @@ defmodule Discordia.GameTest do
     assert GameServer.current_player(game_name) == p2
     assert length(Player.cards(game_name, p1)) == @initial_cards + 4*5
 
-    RoomSupervisor.stop(game_name)
+    :ok = RoomSupervisor.stop(game_name)
+  end
+
+  test "test cutting", game do
+    game_name = "other game"
+    card = %{color: "blue", value: "2"}
+    players = [p1, p2, p3, p4, p5] = ["eu", "tu", "ele", "nos", "vos"]
+    Game.start(game_name, players)
+    GameServer.put_card(game_name, card)
+    set_cards(game_name, players, game.cards)
+
+    {:ok, ^card} = Game.play(game_name, p2, card)
+    assert GameServer.current_player(game_name) == p3
+    {:ok, ^card} = Game.play(game_name, p5, card)
+    assert GameServer.current_player(game_name) == p1
+    {:ok, ^card} = Game.play(game_name, p4, card)
+    assert GameServer.current_player(game_name) == p5
+
+    :ok = RoomSupervisor.stop(game_name)
   end
 
   defp set_cards(game, players, cards) do
