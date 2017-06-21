@@ -16,6 +16,7 @@ defmodule Discordia.Web.Router do
   scope "/", Discordia.Web do
     pipe_through :browser # Use the default browser stack
 
+    get "/game", GameController, :index
     get "/", PageController, :index
   end
 
