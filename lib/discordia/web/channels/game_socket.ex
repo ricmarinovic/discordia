@@ -1,8 +1,8 @@
-defmodule Discordia.Web.UserSocket do
+defmodule Discordia.Web.GameSocket do
   use Phoenix.Socket
 
   ## Channels
-  # channel "room:*", Discordia.Web.RoomChannel
+  channel "room:*", Discordia.Web.GameChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket

@@ -1,7 +1,8 @@
 defmodule Discordia.Web.Endpoint do
   use Phoenix.Endpoint, otp_app: :discordia
 
-  socket "/socket", Discordia.Web.UserSocket
+  # socket "/socket", Discordia.Web.UserSocket
+  socket "/socket", Discordia.Web.GameSocket
 
   # Serve at "/" the static files from "priv/static" directory.
   #
