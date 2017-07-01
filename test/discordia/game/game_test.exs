@@ -40,7 +40,6 @@ defmodule Discordia.GameTest do
   test "drawing cards", game do
     {:ok, _card} = Game.draw(game.name, game.p1)
     assert length(Player.cards(game.name, game.p1)) == @initial_cards + 1
-    {:error, _} = Game.draw(game.name, game.p1)
     assert length(Player.cards(game.name, game.p2)) == @initial_cards
     assert GameServer.current_player(game.name) == game.p2
     {:error, "Not this player's turn."} = Game.draw(game.name, game.p1)

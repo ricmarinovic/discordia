@@ -14,6 +14,7 @@ defmodule Discordia.Application do
       # Start the endpoint when the application starts
       supervisor(Discordia.Web.Endpoint, []),
       supervisor(Discordia.GameSupervisor, []),
+      supervisor(Discordia.Web.Presence, []),
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

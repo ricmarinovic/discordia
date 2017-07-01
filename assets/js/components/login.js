@@ -1,7 +1,7 @@
 import React from 'react'
 import { Redirect } from 'react-router'
 
-import Game from './game'
+import Lobby from './lobby'
 
 export default class Login extends React.Component {
   constructor(props) {
@@ -10,7 +10,7 @@ export default class Login extends React.Component {
     this.state = {
       room: '',
       username: '',
-      hasLogin: false
+      logged: false
     }
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -18,22 +18,31 @@ export default class Login extends React.Component {
 
   handleSubmit(event) {
     event.preventDefault()
-    this.setState({hasLogin: true})
+    this.setState({
+      room: this.refs.room.value,
+      username: this.refs.username.value,
+      logged: true
+    })
   }
 
   render() {
+    if (this.state.logged) {
+      window.userToken = this.state.username
+      return (
+        <Lobby
+          room={this.state.room}
+          username={this.state.username}
+        />
+      )
+    }
+
     return (
       <div className="form-group">
         <form onSubmit={this.handleSubmit}>
-          <input type="text" placeholder="Room" className="form-control" name="room" />
-          <input type="text" placeholder="Username" className="form-control" name="username" />
+          <input type="text" placeholder="Room" className="form-control" name="room" ref="room" />
+          <input type="text" placeholder="Username" className="form-control" name="username" ref="username" />
           <input type="submit" value="Enter" className="btn btn-primary" />
         </form>
-
-        {this.state.hasLogin ? (
-          <Redirect to="/game" />
-        ) : null
-        }
       </div>
     )
   }
