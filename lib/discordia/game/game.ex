@@ -39,7 +39,7 @@ defmodule Discordia.Game do
 
       if Enum.empty?(cards(game, player)) do
         status(game, {:ended, player})
-        # :ok = Discordia.RoomSupervisor.stop(game)
+        # stop(game)
       end
 
       info(game, Mix.env) # TODO: Remove info
@@ -58,6 +58,10 @@ defmodule Discordia.Game do
       info(game, Mix.env) # TODO: Remove info
       {:ok, card}
     end
+  end
+
+  def stop(game) do
+    :ok = Discordia.RoomSupervisor.stop(game)
   end
 
   defp check_status(game, card) do
