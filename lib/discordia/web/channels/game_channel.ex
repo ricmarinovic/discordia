@@ -23,36 +23,45 @@ defmodule Discordia.Web.GameChannel do
     {:noreply, socket}
   end
 
-  def handle_in("start_game", %{"room" => room, "players" => players}, socket) do
-    Game.start(room, players)
-    broadcast!(socket, "game_started", game_info(socket))
+  def handle_in("start_game", %{"players" => players}, socket) do
+    game = socket.assigns.room
+    assign(socket, :players, players)
+
+    case Game.start(game, players) do
+      :ok ->
+        broadcast!(socket, "game_started", %{})
+      _ ->
+        broadcast!(socket, "game_stopped", %{})
+    end
+
+    {:noreply, socket }
+  end
+
+  def handle_in("game_info", _, socket) do
+    broadcast!(socket, "game_info", game_info(socket))
+    game = socket.assigns.room
+    player = socket.assigns.username
+    payload = %{cards: Player.cards(game, player)}
+    {:reply, {:ok, payload}, socket}
+  end
+
+  def handle_in("play_card", [card, next], socket) do
+    game = socket.assigns.room
+    player = socket.assigns.username
+
+    card = convert(card)
+
+    Game.play(game, player, card, next)
+    broadcast!(socket, "game_info", game_info(socket))
+
     {:noreply, socket}
   end
 
-  def handle_in("player_info", _, socket) do
+  def handle_in("draw_card", _, socket) do
     game = socket.assigns.room
     player = socket.assigns.username
-    payload = %{
-      cards: Player.cards(game, player)
-    }
-    {:reply, {:ok, payload}, socket}
-  end
-
-  def handle_in("play_card", card, socket) do
-    game = socket.assigns.room
-    player = socket.assigns.username
-
-    card = for {k, v} <- card, into: %{} do
-      {String.to_atom(k), v}
-    end
-
-    Game.play(game, player, card)
-    broadcast!(socket, "game_info", game_info(socket))
-
-    payload = %{
-      cards: Player.cards(game, player)
-    }
-    {:reply, {:ok, payload}, socket}
+    Game.draw(game, player)
+    {:noreply, socket}
   end
 
   defp game_info(socket) do
@@ -62,5 +71,11 @@ defmodule Discordia.Web.GameChannel do
       current_player: GameServer.current_player(game),
       current_card: GameServer.current_card(game)
     }
+  end
+
+  defp convert(card) do
+    for {k, v} <- card, into: %{} do
+      {String.to_atom(k), v}
+    end
   end
 end

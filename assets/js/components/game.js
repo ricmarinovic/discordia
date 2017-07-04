@@ -4,28 +4,32 @@ import { connect } from 'react-redux'
 class Game extends React.Component {
   componentWillMount() {
     const channel = this.props.channel
-    channel.push("player_info")
-      .receive("ok", (payload) => {
-        this.props.playerInfo(payload)
-      })
+    channel.on("game_info", (payload) => {
+      this.props.gameInfo(payload)
+    })
+    channel.push("game_info").receive("ok", (payload) => {
+      this.props.playerInfo(payload)
+    })
   }
 
   play(card) {
     const channel = this.props.channel
+    channel.push("play_card", [card, "red"])
+    channel.push("game_info").receive("ok", (payload) => {
+      this.props.playerInfo(payload)
+    })
 
-    channel.push("play_card", card)
-      .receive("ok", (payload) => {
-        this.props.playerInfo(payload)
-      })
+  }
 
-    console.log(card)
+  draw() {
+    const channel = this.props.channel
+    channel.push("draw_card")
+    channel.push("game_info").receive("ok", (payload) => {
+      this.props.playerInfo(payload)
+    })
   }
 
   render() {
-    this.props.channel.on("game_info", (payload) => {
-      this.props.gameInfo(payload)
-    })
-
     const current_player = this.props.current_player
     const current_card = this.props.current_card
     const cards = this.props.cards
@@ -34,7 +38,7 @@ class Game extends React.Component {
       <li key={card.value+card.color+index}
           onClick={() => this.play(card)}
           className="list-group-item">
-        {card.value} {card.color}
+        {card.value} {card.color} [{card.next}]
       </li>
     ))
 
@@ -43,10 +47,11 @@ class Game extends React.Component {
         <h1>Room: {this.props.room}</h1>
         <h3>Player: {this.props.player}</h3>
         <p>Current Player: {current_player}</p>
-        <p>Current Card: {current_card.value} {current_card.color}</p>
-        <p>Your cards:</p>
+        <p>Current Card: {current_card.value} {current_card.color} {current_card.next}</p>
+        <p>Your cards: {cards.length}</p>
         <ul className="list-group col-sm-4">
           {showCards}
+          <li className="list-group-item" onClick={this.draw.bind(this)}><b>Draw Card</b></li>
         </ul>
       </div>
     )

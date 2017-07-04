@@ -24,12 +24,11 @@ class Lobby extends React.Component {
       this.updatePlayers(presences)
     })
 
-    channel.on("game_started", (payload) => {
-      this.props.startGame()
-      this.props.gameInfo(payload)
+    channel.on("game_started", () => {
+      this.props.gameStarted()
     })
     channel.on("game_stopped", () => {
-      this.props.stopGame()
+      this.props.gameStopped()
     })
   }
 
@@ -43,7 +42,6 @@ class Lobby extends React.Component {
     event.preventDefault()
     const channel = this.props.channel
     channel.push("start_game", {
-      room: this.props.room,
       players: this.props.players
     })
   }
@@ -51,10 +49,11 @@ class Lobby extends React.Component {
   render() {
     return (
       <div>
-        Room: {this.props.room} <br />
-        Username: {this.props.username} <br />
-        Players: {this.props.players.map((player) =>
-          <li key={player}>{player}</li>)} <br /><br />
+        <p>Room:{this.props.room}</p>
+        <p>Username: {this.props.username}</p>
+        <ul className="list-group col-sm-4">
+          {this.props.players.map((player) => <li key={player} className="list-group-item">{player}</li>)}
+        </ul>
         <input type="submit" className="btn btn-primary" value="Start game" onClick={this.startGame.bind(this)} />
       </div>
     )
@@ -78,22 +77,17 @@ const mapDispatchToProps = (dispatch) => {
       presences: presences,
       players: players
     }),
-    startGame: (payload) => dispatch({
+    gameStarted: () => dispatch({
       type: "GAME_STATUS",
       status: "started",
     }),
-    stopGame: () => dispatch({
+    gameStopped: () => dispatch({
       type: "GAME_STATUS",
       status: "stopped"
     }),
     setChannel: (channel) => dispatch({
       type: "SET_CHANNEL",
       channel: channel
-    }),
-    gameInfo: (payload) => dispatch({
-      type: "GAME_INFO",
-      current_player: payload.current_player,
-      current_card: payload.current_card
     })
   }
 }
