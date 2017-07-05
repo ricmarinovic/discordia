@@ -4,29 +4,30 @@ import { connect } from 'react-redux'
 class Game extends React.Component {
   componentWillMount() {
     const channel = this.props.channel
-    channel.on("game_info", (payload) => {
-      this.props.gameInfo(payload)
+    channel.on("refresh", () => {
+      this.gameInfo(channel)
     })
-    channel.push("game_info").receive("ok", (payload) => {
-      this.props.playerInfo(payload)
-    })
+  }
+
+  gameInfo(channel) {
+    channel.push("game_info")
+      .receive("ok", (payload) => {
+        this.props.gameInfo(payload)
+      })
+    channel.push("player_info")
+      .receive("ok", (payload) => {
+        this.props.playerInfo(payload)
+      })
   }
 
   play(card) {
     const channel = this.props.channel
     channel.push("play_card", [card, "red"])
-    channel.push("game_info").receive("ok", (payload) => {
-      this.props.playerInfo(payload)
-    })
-
   }
 
   draw() {
     const channel = this.props.channel
     channel.push("draw_card")
-    channel.push("game_info").receive("ok", (payload) => {
-      this.props.playerInfo(payload)
-    })
   }
 
   render() {

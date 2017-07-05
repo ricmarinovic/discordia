@@ -24,12 +24,8 @@ class Lobby extends React.Component {
       this.updatePlayers(presences)
     })
 
-    channel.on("game_started", () => {
-      this.props.gameStarted()
-    })
-    channel.on("game_stopped", () => {
-      this.props.gameStopped()
-    })
+    channel.on("game_started", () => this.props.gameStarted())
+    channel.on("game_stopped", () => this.props.gameStopped())
   }
 
   updatePlayers(presences) {
@@ -41,9 +37,11 @@ class Lobby extends React.Component {
   startGame(event) {
     event.preventDefault()
     const channel = this.props.channel
-    channel.push("start_game", {
-      players: this.props.players
-    })
+    channel.push("start_game", {players: this.props.players})
+      .receive("ok", () => { this.props.gameStarted() })
+      .receive("error", (reason) => {
+        console.log(reason)
+      })
   }
 
   render() {

@@ -24,48 +24,42 @@ defmodule Discordia.Web.GameChannel do
   end
 
   def handle_in("start_game", %{"players" => players}, socket) do
-    game = socket.assigns.room
+    %{room: game} = socket.assigns
     assign(socket, :players, players)
 
-    case Game.start(game, players) do
-      :ok ->
-        broadcast!(socket, "game_started", %{})
-      _ ->
-        broadcast!(socket, "game_stopped", %{})
-    end
-
-    {:noreply, socket }
+    Game.start(game, players)
+    broadcast!(socket, "game_started", %{})
+    broadcast!(socket, "refresh", %{})
+    {:reply, :ok, socket}
   end
 
   def handle_in("game_info", _, socket) do
-    broadcast!(socket, "game_info", game_info(socket))
-    game = socket.assigns.room
-    player = socket.assigns.username
+    {:reply, {:ok, game_info(socket)}, socket}
+  end
+
+  def handle_in("player_info", _, socket) do
+    %{room: game, username: player} = socket.assigns
     payload = %{cards: Player.cards(game, player)}
     {:reply, {:ok, payload}, socket}
   end
 
   def handle_in("play_card", [card, next], socket) do
-    game = socket.assigns.room
-    player = socket.assigns.username
-
+    %{room: game, username: player} = socket.assigns
     card = convert(card)
-
     Game.play(game, player, card, next)
-    broadcast!(socket, "game_info", game_info(socket))
-
+    broadcast!(socket, "refresh", %{})
     {:noreply, socket}
   end
 
   def handle_in("draw_card", _, socket) do
-    game = socket.assigns.room
-    player = socket.assigns.username
+    %{room: game, username: player} = socket.assigns
     Game.draw(game, player)
+    broadcast!(socket, "refresh", %{})
     {:noreply, socket}
   end
 
   defp game_info(socket) do
-    game = socket.assigns.room
+    %{room: game} = socket.assigns
 
     %{
       current_player: GameServer.current_player(game),
