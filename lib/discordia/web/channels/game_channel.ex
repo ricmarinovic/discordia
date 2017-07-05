@@ -46,8 +46,8 @@ defmodule Discordia.Web.GameChannel do
       {:ok, _card} ->
         broadcast!(socket, "game_info", game_info(socket))
         {:noreply, socket}
-      {:ok, {:ended, player}} ->
-        broadcast!(socket, "game_over", player)
+      {:ended, player} ->
+        broadcast!(socket, "game_over", %{winner: player})
         {:noreply, socket}
       _ ->
         {:noreply, socket}

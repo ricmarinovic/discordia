@@ -24,13 +24,13 @@ class Game extends React.Component {
   }
 
   render() {
-    const current_ = this.props.current_player
+    const current_player = this.props.current_player
     const current_card = this.props.current_card
     const cards = this.props.cards
     const history = this.props.history
 
-    this.props.channel.on("game_over", () => {
-      this.props.gameOver()
+    this.props.channel.on("game_over", (winner) => {
+      this.props.gameOver(winner)
     })
 
     const showCards = cards.map((card, index) => (
