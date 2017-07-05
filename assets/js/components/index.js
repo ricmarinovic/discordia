@@ -12,6 +12,8 @@ class Index extends React.Component {
         return <Lobby />
       case "started":
         return <Game />
+      case "ended":
+        return <p>GAME OVER!</p>
       default:
         return <Login />
     }

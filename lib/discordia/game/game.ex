@@ -37,14 +37,16 @@ defmodule Discordia.Game do
           make_play(game, player, card)
       end
 
+      info(game, Mix.env) # TODO: Remove info
+
       if Enum.empty?(cards(game, player)) do
         status(game, {:ended, player})
         # stop(game)
+        {:ok, status(game)}
+      else
+        {:ok, card}
       end
 
-      info(game, Mix.env) # TODO: Remove info
-
-      {:ok, card}
     end
   end
 

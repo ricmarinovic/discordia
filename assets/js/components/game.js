@@ -4,20 +4,13 @@ import { connect } from 'react-redux'
 class Game extends React.Component {
   componentWillMount() {
     const channel = this.props.channel
-    channel.on("refresh", () => {
-      this.gameInfo(channel)
+    channel.on("game_info", (game_info) => {
+      this.props.gameInfo(game_info)
+      channel.push("player_info")
+        .receive("ok", (player_info) => {
+          this.props.playerInfo(player_info)
+        })
     })
-  }
-
-  gameInfo(channel) {
-    channel.push("game_info")
-      .receive("ok", (payload) => {
-        this.props.gameInfo(payload)
-      })
-    channel.push("player_info")
-      .receive("ok", (payload) => {
-        this.props.playerInfo(payload)
-      })
   }
 
   play(card) {
@@ -31,29 +24,43 @@ class Game extends React.Component {
   }
 
   render() {
-    const current_player = this.props.current_player
+    const current_ = this.props.current_player
     const current_card = this.props.current_card
     const cards = this.props.cards
+    const history = this.props.history
+
+    this.props.channel.on("game_over", () => {
+      this.props.gameOver()
+    })
 
     const showCards = cards.map((card, index) => (
       <li key={card.value+card.color+index}
           onClick={() => this.play(card)}
           className="list-group-item">
-        {card.value} {card.color} [{card.next}]
+        {card.value} {card.color}
+      </li>
+    ))
+
+    const showHistory = history.map((play, index) => (
+      <li key={index} className="list-group-item">
+        <p>{play.turn} {play.player} {play.card.value} {play.card.color}</p>
       </li>
     ))
 
     return (
       <div>
-        <h1>Room: {this.props.room}</h1>
         <h3>Player: {this.props.player}</h3>
-        <p>Current Player: {current_player}</p>
-        <p>Current Card: {current_card.value} {current_card.color} {current_card.next}</p>
-        <p>Your cards: {cards.length}</p>
-        <ul className="list-group col-sm-4">
+        <p>Current Player: <b>{current_player}</b></p>
+        <p>Current Card: <b>{current_card.value} {current_card.color} {current_card.next}</b></p>
+        <div className="btn btn-primary" onClick={this.draw.bind(this)}><b>Draw Card</b></div>
+        <ol className="list-group col-sm-4">
           {showCards}
-          <li className="list-group-item" onClick={this.draw.bind(this)}><b>Draw Card</b></li>
-        </ul>
+        </ol>
+
+        <h3>History</h3>
+        <ol className="list-group">
+          {showHistory}
+        </ol>
       </div>
     )
   }
@@ -66,7 +73,9 @@ const mapStateToProps = (state) => {
     channel: state.login.channel,
     current_card: state.game.current_card,
     current_player: state.game.current_player,
-    cards: state.game.cards
+    cards: state.game.cards,
+    player_queue: state.game.player_queue,
+    history: state.game.history
   }
 }
 
@@ -75,11 +84,17 @@ const mapDispatchToProps = (dispatch) => {
     gameInfo: (payload) => dispatch({
       type: "GAME_INFO",
       current_card: payload.current_card,
-      current_player: payload.current_player
+      current_player: payload.current_player,
+      player_queue: payload.player_queue,
+      history: payload.history
     }),
     playerInfo: (payload) => dispatch({
       type: "PLAYER_INFO",
       cards: payload.cards
+    }),
+    gameOver: () => dispatch({
+      type: "GAME_STATUS",
+      status: "ended"
     })
   }
 }
