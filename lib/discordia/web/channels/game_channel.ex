@@ -10,8 +10,8 @@ defmodule Discordia.Web.GameChannel do
   end
 
   def terminate(message, socket) do
-    Game.stop(socket.assigns.room)
     broadcast!(socket, "game_stopped", %{})
+    Game.stop(socket.assigns.room)
     message
   end
 
@@ -39,9 +39,10 @@ defmodule Discordia.Web.GameChannel do
     {:reply, {:ok, payload}, socket}
   end
 
-  def handle_in("play_card", [card, next], socket) do
+  def handle_in("play_card", card, socket) do
     %{room: game, username: player} = socket.assigns
     card = convert(card)
+    next = Discordia.Dealer.initial_color()
     case Game.play(game, player, card, next) do
       {:ok, _card} ->
         broadcast!(socket, "game_info", game_info(socket))
