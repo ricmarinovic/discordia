@@ -11,11 +11,14 @@ class Game extends React.Component {
           this.props.playerInfo(player_info)
         })
     })
+    channel.on("game_over", (winner) => {
+      this.props.gameOver(winner)
+    })
   }
 
   play(card) {
     const channel = this.props.channel
-    channel.push("play_card", [card, "red"])
+      channel.push("play_card", card)
   }
 
   draw() {
@@ -29,21 +32,18 @@ class Game extends React.Component {
     const cards = this.props.cards
     const history = this.props.history
 
-    this.props.channel.on("game_over", (winner) => {
-      this.props.gameOver(winner)
-    })
-
     const showCards = cards.map((card, index) => (
       <li key={card.value+card.color+index}
           onClick={() => this.play(card)}
-          className="list-group-item">
+          className="list-group-item"
+          style={{cursor: "pointer"}}>
         {card.value} {card.color}
       </li>
     ))
 
     const showHistory = history.map((play, index) => (
       <li key={index} className="list-group-item">
-        <p>{play.turn} {play.player} {play.card.value} {play.card.color}</p>
+        <p>{play.turn} -> {play.player} plays {play.card.value} {play.card.color}</p>
       </li>
     ))
 
@@ -57,10 +57,7 @@ class Game extends React.Component {
           {showCards}
         </ol>
 
-        <h3>History</h3>
-        <ol className="list-group">
-          {showHistory}
-        </ol>
+
       </div>
     )
   }
@@ -93,7 +90,7 @@ const mapDispatchToProps = (dispatch) => {
       cards: payload.cards
     }),
     gameOver: () => dispatch({
-      type: "GAME_STATUS",
+      type: "GAME_OVER",
       status: "ended"
     })
   }

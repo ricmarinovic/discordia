@@ -3,9 +3,7 @@ const initialState = {
   username: "",
   presences: {},
   players: [],
-  status: "not_logged",
-  current_card: {},
-  current_player: ""
+  status: "not_logged"
 }
 
 export default (state = initialState, action) => {
@@ -28,6 +26,10 @@ export default (state = initialState, action) => {
     case "SET_CHANNEL":
       return Object.assign({}, state, {
         channel: action.channel
+      })
+    case "GAME_OVER":
+      return Object.assign({}, initialState, {
+        status: action.status
       })
     default:
       return state

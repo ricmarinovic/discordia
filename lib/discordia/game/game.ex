@@ -41,7 +41,7 @@ defmodule Discordia.Game do
 
       if Enum.empty?(cards(game, player)) do
         status(game, {:ended, player})
-        # stop(game)
+        stop(game)
         {:ended, player}
       else
         {:ok, card}
