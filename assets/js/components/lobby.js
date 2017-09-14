@@ -1,6 +1,7 @@
 import React from 'react'
 import { connect } from 'react-redux'
 import { Socket, Presence } from "phoenix"
+import Table from './table'
 
 class Lobby extends React.Component {
   componentWillMount() {

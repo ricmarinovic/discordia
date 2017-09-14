@@ -132,6 +132,10 @@ defmodule Discordia.GameServer do
   def handle_call(:current_player, _from, state = %{player_queue: [player | _]}) do
     {:reply, player, state}
   end
+  def handle_call(:next_player, _from, state = %{player_queue: [prev, "undefined" | rest]}) do
+    [next | _] = rest
+    {:reply, next, %{state | player_queue: rest ++ [prev]}}
+  end
   def handle_call(:next_player, _from, state = %{player_queue: [prev | rest]}) do
     [next | _] = rest
     {:reply, next, %{state | player_queue: rest ++ [prev]}}

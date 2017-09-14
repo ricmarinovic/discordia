@@ -7,8 +7,12 @@ class Login extends React.Component {
 
     const room = this.refs.room.value
     const username = this.refs.username.value
+    let st = "logged"
+    if (this.refs.username.value === 'observer') {
+      st = "observer"
+    }
 
-    this.props.login(room, username)
+    this.props.login(room, username, st)
   }
 
   render() {
@@ -30,12 +34,12 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    login: (room, username) => dispatch({
+    login: (room, username, st) => dispatch({
       type: "LOGIN",
       room: room,
       username: username,
-      status: "logged"
-    })
+      status: st
+    }),
   }
 }
 
