@@ -1,4 +1,4 @@
-defmodule Discordia.Web.Presence do
+defmodule DiscordiaWeb.Presence do
   @moduledoc """
   Provides presence tracking to channels and processes.
 
@@ -10,7 +10,7 @@ defmodule Discordia.Web.Presence do
   Presences can be tracked in your channel after joining:
 
       defmodule Discordia.MyChannel do
-        use Discordia.Web, :channel
+        use DiscordiaWeb, :channel
         alias Discordia.Presence
 
         def join("some:topic", _params, socket) do
@@ -54,12 +54,8 @@ defmodule Discordia.Web.Presence do
   to include any additional information. For example:
 
       def fetch(_topic, entries) do
-        query =
-          from u in User,
-            where: u.id in ^Map.keys(entries),
-            select: {u.id, u}
-
-        users = query |> Repo.all |> Enum.into(%{})
+        users = entries |> Map.keys() |> Accounts.get_users_map(entries)
+        # => %{"123" => %{name: "User 123"}, "456" => %{name: nil}}
 
         for {key, %{metas: metas}} <- entries, into: %{} do
           {key, %{metas: metas, user: users[key]}}

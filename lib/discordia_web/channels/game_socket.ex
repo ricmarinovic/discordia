@@ -1,8 +1,8 @@
-defmodule Discordia.Web.GameSocket do
+defmodule DiscordiaWeb.GameSocket do
   use Phoenix.Socket
 
   ## Channels
-  channel "room:*", Discordia.Web.GameChannel
+  channel "room:*", DiscordiaWeb.GameChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
@@ -19,8 +19,8 @@ defmodule Discordia.Web.GameSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
-  def connect(%{"username" => username}, socket) do
-    {:ok, assign(socket, :username, username)}
+  def connect(_params, socket) do
+    {:ok, socket}
   end
 
   # Socket id's are topics that allow you to identify all sockets for a given user:
@@ -30,7 +30,7 @@ defmodule Discordia.Web.GameSocket do
   # Would allow you to broadcast a "disconnect" event and terminate
   # all active sockets and channels for a given user:
   #
-  #     Discordia.Web.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
+  #     DiscordiaWeb.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
   #
   # Returning `nil` makes this socket anonymous.
   def id(_socket), do: nil

@@ -1,8 +1,7 @@
-defmodule Discordia.Web.Endpoint do
+defmodule DiscordiaWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :discordia
 
-  # socket "/socket", Discordia.Web.UserSocket
-  socket "/socket", Discordia.Web.GameSocket
+  socket "/socket", DiscordiaWeb.GameSocket
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -37,19 +36,22 @@ defmodule Discordia.Web.Endpoint do
   plug Plug.Session,
     store: :cookie,
     key: "_discordia_key",
-    signing_salt: "PCFYfr9M"
+    signing_salt: "TLYbScXR"
 
-  plug Discordia.Web.Router
+  plug DiscordiaWeb.Router
 
   @doc """
-  Dynamically loads configuration from the system environment
-  on startup.
+  Callback invoked for dynamically configuring the endpoint.
 
-  It receives the endpoint configuration from the config files
-  and must return the updated configuration.
+  It receives the endpoint configuration and checks if
+  configuration should be loaded from the system environment.
   """
-  def load_from_system_env(config) do
-    port = System.get_env("PORT") || raise "expected the PORT environment variable to be set"
-    {:ok, Keyword.put(config, :http, [:inet6, port: port])}
+  def init(_key, config) do
+    if config[:load_from_system_env] do
+      port = System.get_env("PORT") || raise "expected the PORT environment variable to be set"
+      {:ok, Keyword.put(config, :http, [:inet6, port: port])}
+    else
+      {:ok, config}
+    end
   end
 end

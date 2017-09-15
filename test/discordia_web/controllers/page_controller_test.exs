@@ -1,5 +1,5 @@
-defmodule Discordia.Web.PageControllerTest do
-  use Discordia.Web.ConnCase
+defmodule DiscordiaWeb.PageControllerTest do
+  use DiscordiaWeb.ConnCase
 
   test "GET /", %{conn: conn} do
     conn = get conn, "/"

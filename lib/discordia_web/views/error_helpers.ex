@@ -1,4 +1,4 @@
-defmodule Discordia.Web.ErrorHelpers do
+defmodule DiscordiaWeb.ErrorHelpers do
   @moduledoc """
   Conveniences for translating and building error messages.
   """
@@ -32,9 +32,9 @@ defmodule Discordia.Web.ErrorHelpers do
     #     dgettext "errors", "is invalid"
     #
     if count = opts[:count] do
-      Gettext.dngettext(Discordia.Web.Gettext, "errors", msg, msg, count, opts)
+      Gettext.dngettext(DiscordiaWeb.Gettext, "errors", msg, msg, count, opts)
     else
-      Gettext.dgettext(Discordia.Web.Gettext, "errors", msg, opts)
+      Gettext.dgettext(DiscordiaWeb.Gettext, "errors", msg, opts)
     end
   end
 end

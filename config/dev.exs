@@ -6,7 +6,7 @@ use Mix.Config
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we use it
 # with brunch.io to recompile .js and .css sources.
-config :discordia, Discordia.Web.Endpoint,
+config :discordia, DiscordiaWeb.Endpoint,
   http: [port: 4000],
   debug_errors: true,
   code_reloader: true,
@@ -31,13 +31,13 @@ config :discordia, Discordia.Web.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :discordia, Discordia.Web.Endpoint,
+config :discordia, DiscordiaWeb.Endpoint,
   live_reload: [
     patterns: [
       ~r{priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$},
       ~r{priv/gettext/.*(po)$},
-      ~r{lib/discordia/web/views/.*(ex)$},
-      ~r{lib/discordia/web/templates/.*(eex)$}
+      ~r{lib/discordia_web/views/.*(ex)$},
+      ~r{lib/discordia_web/templates/.*(eex)$}
     ]
   ]
 
@@ -47,13 +47,3 @@ config :logger, :console, format: "[$level] $message\n"
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
-
-import_config "dev.secret.exs"
-# # Configure your database
-# config :discordia, Discordia.Repo,
-#   adapter: Ecto.Adapters.Postgres,
-#   username: "postgres",
-#   password: "postgres",
-#   database: "discordia_dev",
-#   hostname: "localhost",
-#   pool_size: 10

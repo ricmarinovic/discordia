@@ -1,9 +1,9 @@
 import React from 'react'
 import { connect } from 'react-redux'
 
-import Login from './login'
-import Lobby from './lobby'
-import Game from './game'
+import Login from './Login'
+import Lobby from './Lobby'
+import Game from './Game'
 
 class Index extends React.Component {
   render() {
@@ -12,8 +12,6 @@ class Index extends React.Component {
         return <Lobby />
       case "started":
         return <Game />
-      case "ended":
-        return <p>GAME OVER!</p>
       default:
         return <Login />
     }

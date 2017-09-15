@@ -5,15 +5,11 @@
 # is restricted to this project.
 use Mix.Config
 
-# General application configuration
-config :discordia,
-  ecto_repos: [Discordia.Repo]
-
 # Configures the endpoint
-config :discordia, Discordia.Web.Endpoint,
+config :discordia, DiscordiaWeb.Endpoint,
   url: [host: "localhost"],
-  secret_key_base: "iJDzsFTWbPr3ScJxXVufSimHgaXMvjzA8k1RAKMJ7KCckxKhzVU6ylJ/Z0YKOGt9",
-  render_errors: [view: Discordia.Web.ErrorView, accepts: ~w(html json)],
+  secret_key_base: "c7+Kzih5ldzwnxviAOkvIpl3fMwh6QG+nwLDj+y4hqkd4sjcU24WEYbprdeLvtxu",
+  render_errors: [view: DiscordiaWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: Discordia.PubSub,
            adapter: Phoenix.PubSub.PG2]
 

@@ -1,5 +1,5 @@
-defmodule Discordia.Web.ErrorView do
-  use Discordia.Web, :view
+defmodule DiscordiaWeb.ErrorView do
+  use DiscordiaWeb, :view
 
   def render("404.html", _assigns) do
     "Page not found"

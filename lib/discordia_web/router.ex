@@ -1,5 +1,5 @@
-defmodule Discordia.Web.Router do
-  use Discordia.Web, :router
+defmodule DiscordiaWeb.Router do
+  use DiscordiaWeb, :router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -13,14 +13,14 @@ defmodule Discordia.Web.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", Discordia.Web do
+  scope "/", DiscordiaWeb do
     pipe_through :browser # Use the default browser stack
 
-    get "/*path", GameController, :index
+    get "/*path", PageController, :index
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", Discordia.Web do
+  # scope "/api", DiscordiaWeb do
   #   pipe_through :api
   # end
 end

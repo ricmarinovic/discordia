@@ -1,44 +1,45 @@
-defmodule Discordia.Web do
+defmodule DiscordiaWeb do
   @moduledoc """
-  A module that keeps using definitions for controllers,
-  views and so on.
+  The entrypoint for defining your web interface, such
+  as controllers, views, channels and so on.
 
   This can be used in your application as:
 
-      use Discordia.Web, :controller
-      use Discordia.Web, :view
+      use DiscordiaWeb, :controller
+      use DiscordiaWeb, :view
 
   The definitions below will be executed for every view,
   controller, etc, so keep them short and clean, focused
   on imports, uses and aliases.
 
   Do NOT define functions inside the quoted expressions
-  below.
+  below. Instead, define any helper function in modules
+  and import those modules here.
   """
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: Discordia.Web
+      use Phoenix.Controller, namespace: DiscordiaWeb
       import Plug.Conn
-      import Discordia.Web.Router.Helpers
-      import Discordia.Web.Gettext
+      import DiscordiaWeb.Router.Helpers
+      import DiscordiaWeb.Gettext
     end
   end
 
   def view do
     quote do
-      use Phoenix.View, root: "lib/discordia/web/templates",
-                        namespace: Discordia.Web
+      use Phoenix.View, root: "lib/discordia_web/templates",
+                        namespace: DiscordiaWeb
 
       # Import convenience functions from controllers
-      import Phoenix.Controller, only: [get_csrf_token: 0, get_flash: 2, view_module: 1]
+      import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
 
       # Use all HTML functionality (forms, tags, etc)
       use Phoenix.HTML
 
-      import Discordia.Web.Router.Helpers
-      import Discordia.Web.ErrorHelpers
-      import Discordia.Web.Gettext
+      import DiscordiaWeb.Router.Helpers
+      import DiscordiaWeb.ErrorHelpers
+      import DiscordiaWeb.Gettext
     end
   end
 
@@ -53,7 +54,7 @@ defmodule Discordia.Web do
   def channel do
     quote do
       use Phoenix.Channel
-      import Discordia.Web.Gettext
+      import DiscordiaWeb.Gettext
     end
   end
 
