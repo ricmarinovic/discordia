@@ -33,12 +33,16 @@ class Game extends React.Component {
     const history = this.props.history
 
     const showCards = cards.map((card, index) => (
-      <li key={card.value+card.color+index}
+      <div key={card.value+card.color+index}
           onClick={() => this.play(card)}
-          className="list-group-item"
+          className={`card num-${card.value} ${card.color}`}
           style={{cursor: "pointer"}}>
-        {card.value} {card.color}
-      </li>
+          <span className="inner">
+            <span className="mark">
+              {card.value}
+            </span>
+          </span>
+      </div>
     ))
 
     const showHistory = history.map((play, index) => (
@@ -51,11 +55,19 @@ class Game extends React.Component {
       <div>
         <h3>Player: {this.props.player}</h3>
         <p>Current Player: <b>{current_player}</b></p>
-        <p>Current Card: <b>{current_card.value} {current_card.color} {current_card.next}</b></p>
+        <p>Current Card:</p> 
+        <div className={`card num-${current_card.value} ${current_card.color}`}>
+          <span className="inner">
+            <span className="mark">
+              {current_card.value}
+            </span>
+          </span>
+        </div>
+        <p>Next Color: {current_card.next}</p>
         <div className="btn btn-primary" onClick={this.draw.bind(this)}><b>Draw Card</b></div>
-        <ol className="list-group col-sm-4">
+        <div className="row list-group" style={{ marginTop: 180 }}>
           {showCards}
-        </ol>
+        </div>
 
         <h3>History</h3>
         <ol className="list-group">
