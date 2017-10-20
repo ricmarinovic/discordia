@@ -48,12 +48,6 @@ config :logger, :console, format: "[$level] $message\n"
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
 
-import_config "dev.secret.exs"
-# # Configure your database
-# config :discordia, Discordia.Repo,
-#   adapter: Ecto.Adapters.Postgres,
-#   username: "postgres",
-#   password: "postgres",
-#   database: "discordia_dev",
-#   hostname: "localhost",
-#   pool_size: 10
+config :discordia, Discordia.Repo,
+	adapter: Sqlite.Ecto2,
+	database: "discordia.sqlite3"
