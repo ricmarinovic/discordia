@@ -7,13 +7,14 @@ import Game from './game'
 
 class Index extends React.Component {
   render() {
-    switch (this.props.status) {
+    let {status, currentPlayer} = this.props;
+    switch (status) {
       case "logged":
         return <Lobby />
       case "started":
         return <Game />
       case "ended":
-        return <p>GAME OVER!</p>
+        return <p>GAME OVER! Player {currentPlayer} wins!</p>
       default:
         return <Login />
     }
@@ -22,7 +23,8 @@ class Index extends React.Component {
 
 const mapStateToProps = (state) => {
   return {
-    status: state.login.status
+    status: state.login.status,
+    currentPlayer: state.game.current_player
   }
 }
 
