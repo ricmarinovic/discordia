@@ -1,0 +1,9 @@
+<div>
+  <%= form_for @conn, Routes.session_path(@conn, :create), [as: :player], fn f -> %>
+    <div class="form-group">
+      <%= text_input f, :name, placeholder: "Name", autofocus: true, required: true %>
+
+      <%= submit "Create game", class: "btn btn-primary" %>
+    </div>
+  <% end  %>
+</div>
