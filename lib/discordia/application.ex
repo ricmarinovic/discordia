@@ -10,7 +10,8 @@ defmodule Discordia.Application do
     children = [
       {Registry, keys: :unique, name: Discordia.GameRegistry},
       Discordia.GameSupervisor,
-      DiscordiaWeb.Endpoint
+      DiscordiaWeb.Endpoint,
+      DiscordiaWeb.Presence
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
