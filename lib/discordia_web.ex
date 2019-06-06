@@ -23,7 +23,11 @@ defmodule DiscordiaWeb do
 
       import Plug.Conn
       import DiscordiaWeb.Gettext
+      import Phoenix.LiveView.Controller, only: [live_render: 3]
       alias DiscordiaWeb.Router.Helpers, as: Routes
+
+      @type conn :: %Plug.Conn{}
+      @type params :: map
     end
   end
 
@@ -41,6 +45,7 @@ defmodule DiscordiaWeb do
 
       import DiscordiaWeb.ErrorHelpers
       import DiscordiaWeb.Gettext
+      import Phoenix.LiveView, only: [live_render: 2, live_render: 3]
       alias DiscordiaWeb.Router.Helpers, as: Routes
     end
   end
@@ -50,6 +55,7 @@ defmodule DiscordiaWeb do
       use Phoenix.Router
       import Plug.Conn
       import Phoenix.Controller
+      import Phoenix.LiveView.Router
     end
   end
 

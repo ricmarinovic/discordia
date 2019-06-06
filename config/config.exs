@@ -12,7 +12,8 @@ config :discordia, DiscordiaWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "WjElwg6/wi8RCPy5RL9MiC86a9JfnXLPYy2I0SPOVlRJGsHCGYd8/iZDzeTZEazN",
   render_errors: [view: DiscordiaWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: Discordia.PubSub, adapter: Phoenix.PubSub.PG2]
+  pubsub: [name: Discordia.PubSub, adapter: Phoenix.PubSub.PG2],
+  live_view: [signing_salt: "Gx3Q5BUd0jFZ8bFDK+bzoRkpaU1chvFh"]
 
 # Configures Elixir's Logger
 config :logger, :console,

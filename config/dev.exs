@@ -52,7 +52,8 @@ config :discordia, DiscordiaWeb.Endpoint,
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
       ~r"lib/discordia_web/{live,views}/.*(ex)$",
-      ~r"lib/discordia_web/templates/.*(eex)$"
+      ~r"lib/discordia_web/templates/.*(eex)$",
+      ~r{lib/my_app_web/live/.*(ex)$}
     ]
   ]
 

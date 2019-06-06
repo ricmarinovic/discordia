@@ -5,6 +5,7 @@ defmodule DiscordiaWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_flash
+    plug Phoenix.LiveView.Flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
   end
@@ -17,6 +18,10 @@ defmodule DiscordiaWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+
+    resources "/session", SessionController, only: [:new, :create, :delete], singleton: true
+
+    resources "/game", GameController, only: [:new, :create, :show]
   end
 
   # Other scopes may use custom stacks.

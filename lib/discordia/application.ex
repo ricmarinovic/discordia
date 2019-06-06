@@ -8,10 +8,9 @@ defmodule Discordia.Application do
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
-      # Start the endpoint when the application starts
+      {Registry, keys: :unique, name: Discordia.GameRegistry},
+      Discordia.GameSupervisor,
       DiscordiaWeb.Endpoint
-      # Starts a worker by calling: Discordia.Worker.start_link(arg)
-      # {Discordia.Worker, arg},
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

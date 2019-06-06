@@ -40,7 +40,8 @@ defmodule Discordia.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:credo, "~> 1.0", only: [:dev], runtime: false},
-      {:ex_doc, "~> 0.20", only: [:dev], runtime: false}
+      {:ex_doc, "~> 0.20", only: [:dev], runtime: false},
+      {:phoenix_live_view, github: "phoenixframework/phoenix_live_view"}
     ]
   end
 end
