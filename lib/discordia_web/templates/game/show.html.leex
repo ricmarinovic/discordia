@@ -1,0 +1,26 @@
+<%= if assigns[:error] do %>
+  <div class="alert alert-danger" role="alert">
+    <%= @error %>
+  </div>
+<% end %>
+
+<h2>
+  <%= Routes.game_url(@socket, :show, @game_name) %>
+</h2>
+
+<div id="players">
+  <h2>Players</h2>
+
+  <ul>
+    <%= for {player, _} <- @players do %>
+      <li><%= player %></li>
+    <% end %>
+  </ul>
+</div>
+
+<%= if assigns[:game] do %>
+  <button phx-click="stop_game">Stop game</button>
+<% else %>
+  <button phx-click="start_game">Start game</button>
+<% end %>
+

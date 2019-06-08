@@ -3,6 +3,8 @@ defmodule Discordia.GameSupervisor do
 
   alias Discordia.GameServer
 
+  require Logger
+
   def start_link(_) do
     DynamicSupervisor.start_link(__MODULE__, :ok, name: __MODULE__)
   end
@@ -24,5 +26,13 @@ defmodule Discordia.GameSupervisor do
     }
 
     DynamicSupervisor.start_child(__MODULE__, child_spec)
+  end
+
+  @spec stop_game(String.t()) :: nil | :ok
+  def stop_game(game_name) do
+    with pid when is_pid(pid) <- GameServer.game_pid(game_name) do
+      Logger.info("Terminating game #{game_name}.")
+      DynamicSupervisor.terminate_child(__MODULE__, pid)
+    end
   end
 end

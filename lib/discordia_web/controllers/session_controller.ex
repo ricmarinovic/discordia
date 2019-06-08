@@ -1,13 +1,11 @@
 defmodule DiscordiaWeb.SessionController do
   use DiscordiaWeb, :controller
 
+  alias Discordia.Game
+
   @spec new(conn, params) :: conn
   def new(conn, _params) do
-    if get_session(conn, :current_player) do
-      redirect(conn, to: Routes.game_path(conn, :new))
-    else
-      render(conn, "new.html")
-    end
+    render(conn, "new.html")
   end
 
   @spec create(conn, params) :: conn
@@ -16,13 +14,16 @@ defmodule DiscordiaWeb.SessionController do
 
     conn
     |> put_session(:current_player, player)
-    |> redirect(to: Routes.game_path(conn, :new))
+    |> redirect_back_or_new_game()
   end
 
-  @spec delete(conn, params) :: conn
-  def delete(conn, _params) do
+  defp redirect_back_or_new_game(conn) do
+    path =
+      get_session(conn, :return_to) ||
+        Routes.game_path(conn, :show, Game.generate_game_name())
+
     conn
-    |> delete_session(:current_player)
-    |> redirect(to: Routes.session_path(conn, :new))
+    |> put_session(:return_to, nil)
+    |> redirect(to: path)
   end
 end

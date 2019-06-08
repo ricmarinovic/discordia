@@ -14,4 +14,10 @@ defmodule Discordia.GameServer do
     game = Discordia.Game.new()
     {:ok, game, @timeout}
   end
+
+  def game_pid(game_name) do
+    game_name
+    |> via_tuple()
+    |> GenServer.whereis()
+  end
 end

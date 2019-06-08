@@ -17,13 +17,9 @@ defmodule DiscordiaWeb.Router do
   scope "/", DiscordiaWeb do
     pipe_through :browser
 
-    get "/", GameController, :new
-    resources "/game", GameController, only: [:new, :create, :show]
-    resources "/session", SessionController, only: [:new, :create, :delete], singleton: true
+    get "/", SessionController, :new
+    get "/:id", GameController, :show
+    resources "/game", GameController, only: [:create]
+    resources "/session", SessionController, only: [:create]
   end
-
-  # Other scopes may use custom stacks.
-  # scope "/api", DiscordiaWeb do
-  #   pipe_through :api
-  # end
 end
