@@ -2,6 +2,7 @@ defmodule Discordia.GameSupervisor do
   use DynamicSupervisor
 
   alias Discordia.GameServer
+  alias Discordia.PlayerServer
 
   require Logger
 
@@ -18,13 +19,25 @@ defmodule Discordia.GameSupervisor do
   Starts a supervised `GameServer` process.
 
   """
-  def start_game(game_name) do
+  def start_game(game_name, players) do
     child_spec = %{
       id: GameServer,
-      start: {GameServer, :start_link, [game_name]},
+      start: {GameServer, :start_link, [game_name, players]},
       restart: :transient
     }
 
+    Logger.info("Starting game #{game_name}")
+    DynamicSupervisor.start_child(__MODULE__, child_spec)
+  end
+
+  def start_player(player_name) do
+    child_spec = %{
+      id: PlayerServer,
+      start: {PlayerServer, :start_link, [player_name]},
+      restart: :transient
+    }
+
+    Logger.info("Starting player #{player_name}")
     DynamicSupervisor.start_child(__MODULE__, child_spec)
   end
 
@@ -32,7 +45,7 @@ defmodule Discordia.GameSupervisor do
   def stop_game(game_name) do
     with pid when is_pid(pid) <- GameServer.game_pid(game_name) do
       Logger.info("Terminating game #{game_name}.")
-      DynamicSupervisor.terminate_child(__MODULE__, pid)
+      DynamicSupervisor.stop(__MODULE__)
     end
   end
 end

@@ -8,6 +8,7 @@
   <%= Routes.game_url(@socket, :show, @game_name) %>
 </h2>
 
+<%= if assigns[:players] do %>
 <div id="players">
   <h2>Players</h2>
 
@@ -17,8 +18,20 @@
     <% end %>
   </ul>
 </div>
+<% end %>
 
 <%= if assigns[:game] do %>
+  <h1>Game History</h1>
+  <ul>
+    <%= for turn <- @game.history do %>
+    <li>
+      Turn <%= turn.turn %>:
+      <%= turn.card.color %>
+      <%= turn.card.value %>
+    </li>
+    <% end %>
+  </ul>
+
   <button phx-click="stop_game">Stop game</button>
 <% else %>
   <button phx-click="start_game">Start game</button>

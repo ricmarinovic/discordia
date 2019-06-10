@@ -9,6 +9,7 @@ defmodule Discordia.Application do
     # List all child processes to be supervised
     children = [
       {Registry, keys: :unique, name: Discordia.GameRegistry},
+      {Registry, keys: :unique, name: Discordia.PlayerRegistry},
       Discordia.GameSupervisor,
       DiscordiaWeb.Endpoint,
       DiscordiaWeb.Presence

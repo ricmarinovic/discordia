@@ -9,11 +9,9 @@ defmodule DiscordiaWeb.SessionController do
   end
 
   @spec create(conn, params) :: conn
-  def create(conn, %{"player" => %{"name" => name}}) do
-    player = Discordia.Player.new(name)
-
+  def create(conn, %{"player" => %{"name" => player_name}}) do
     conn
-    |> put_session(:current_player, player)
+    |> put_session(:current_player, player_name)
     |> redirect_back_or_new_game()
   end
 

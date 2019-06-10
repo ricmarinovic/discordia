@@ -6,61 +6,75 @@ defmodule DiscordiaWeb.GameLive do
   alias DiscordiaWeb.Presence
   alias Phoenix.Socket.Broadcast
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     GameView.render("show.html", assigns)
   end
 
+  @impl Phoenix.LiveView
   def mount(%{game_name: game_name, current_player: current_player}, socket) do
     Phoenix.PubSub.subscribe(Discordia.PubSub, "game:" <> game_name)
-    Presence.track(self(), "game:" <> game_name, current_player.name, %{})
-    socket = assign(socket, game_name: game_name)
+    Presence.track(self(), "game:" <> game_name, current_player, %{})
+    socket = assign(socket, %{game_name: game_name, players: nil, game: nil})
 
-    {:ok, fetch(socket)}
+    {:ok, socket}
   end
 
-  defp fetch(%{assigns: %{game_name: game_name}} = socket) do
-    player_list = Presence.list("game:" <> game_name)
-    assign(socket, %{players: player_list})
-  end
-
-  def handle_event("start_game", _, %{assigns: %{game_name: game_name}} = socket) do
-    case GameSupervisor.start_game(game_name) do
-      {:ok, _game_pid} ->
-        Phoenix.PubSub.broadcast!(Discordia.PubSub, "game:" <> game_name, {:ok, :game_started})
-
-      {:error, _reason} ->
-        Phoenix.PubSub.broadcast!(
-          Discordia.PubSub,
-          "game:" <> game_name,
-          {:error, "Unable to start game"}
-        )
-    end
-
-    {:noreply, socket}
+  @impl Phoenix.LiveView
+  def handle_event("start_game", _, socket) do
+    {:noreply, start_game(socket)}
   end
 
   def handle_event("stop_game", _, socket) do
     {:noreply, stop_game(socket)}
   end
 
+  @impl Phoenix.LiveView
   def handle_info(%Broadcast{event: "presence_diff"}, socket) do
-    {:noreply, fetch(socket)}
+    %{assigns: %{game_name: game_name}} = socket
+    player_list = Presence.list("game:" <> game_name)
+
+    {:noreply, assign(socket, %{players: player_list})}
   end
 
-  def handle_info({:ok, :game_started}, socket) do
-    socket = assign(socket, %{game: "The game"})
-    {:noreply, socket}
+  def handle_info({:ok, :game_started, game_name}, socket) do
+    game = GameServer.summary(game_name)
+    {:noreply, assign(socket, %{game: game})}
+  end
+
+  def handle_info({:ok, :game_stopped}, socket) do
+    {:noreply, assign(socket, %{game: nil})}
   end
 
   def handle_info({:error, reason}, socket) do
-    socket = assign(socket, %{error: reason})
-    {:noreply, socket}
+    {:noreply, assign(socket, %{error: reason})}
   end
 
-  def stop_game(%{assigns: %{game_name: game_name}} = socket) do
+  defp start_game(%{assigns: %{game_name: game_name, players: players}} = socket) do
+    GameSupervisor.start_game(game_name, Map.keys(players))
+
+    Phoenix.PubSub.broadcast!(
+      Discordia.PubSub,
+      "game:" <> game_name,
+      {:ok, :game_started, game_name}
+    )
+
+    socket
+  end
+
+  defp stop_game(%{assigns: %{game_name: game_name}} = socket) do
     case GameSupervisor.stop_game(game_name) do
-      :ok -> assign(socket, %{game: nil})
-      nil -> socket
+      :ok ->
+        Phoenix.PubSub.broadcast!(Discordia.PubSub, "game:" <> game_name, {:ok, :game_stopped})
+
+      nil ->
+        Phoenix.PubSub.broadcast!(
+          Discordia.PubSub,
+          "game:" <> game_name,
+          {:error, "Unable to stop game"}
+        )
     end
+
+    socket
   end
 end
