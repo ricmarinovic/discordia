@@ -3,20 +3,64 @@ defmodule Discordia.PlayerServer do
 
   @timeout :timer.minutes(30)
 
-  def start_link(player_name) do
-    GenServer.start_link(__MODULE__, {player_name}, name: via_tuple(player_name))
+  @doc """
+  Lists all player's cards.
+  """
+  def list_cards(game_name, player_name) do
+    GenServer.call(via_tuple(game_name, player_name), :list_cards)
   end
 
-  defp via_tuple(player_name), do: {:via, Registry, {Discordia.PlayerRegistry, player_name}}
+  @doc """
+  Add given card to player's cards.
+  """
+  def add_card(game_name, player_name, card) do
+    GenServer.cast(via_tuple(game_name, player_name), {:add_card, card})
+  end
 
+  @doc """
+  Remove given card from player's cards.
+  """
+  def remove_card(game_name, player_name, card) do
+    GenServer.cast(via_tuple(game_name, player_name), {:remove_card, card})
+  end
+
+  @doc """
+  Checks whether the player has the given card.
+  """
+  @spec has_card?(String.t(), String.t(), map) :: {:ok, map} | {:error, <<_::272>>}
+  def has_card?(game_name, player_name, card) do
+    if card in list_cards(game_name, player_name) do
+      {:ok, card}
+    else
+      {:error, "The player doesn't have that card."}
+    end
+  end
+
+  def start_link(game_name, player_name) do
+    GenServer.start_link(__MODULE__, {player_name}, name: via_tuple(game_name, player_name))
+  end
+
+  defp via_tuple(game_name, player_name) do
+    {:via, Registry, {Discordia.PlayerRegistry, "#{game_name}:#{player_name}"}}
+  end
+
+  @impl GenServer
   def init({player_name}) do
-    player = Discordia.Player.new(player_name)
+    player = %{name: player_name, cards: []}
     {:ok, player, @timeout}
   end
 
-  def player_pid(player_name) do
-    player_name
-    |> via_tuple()
-    |> GenServer.whereis()
+  @impl GenServer
+  def handle_call(:list_cards, _from, player) do
+    {:reply, player.cards, player}
+  end
+
+  @impl GenServer
+  def handle_cast({:add_card, card}, player) do
+    {:noreply, %{player | cards: [card | player.cards]}}
+  end
+
+  def handle_cast({:remove_card, card}, player) do
+    {:noreply, %{player | cards: player.cards -- [card]}}
   end
 end
