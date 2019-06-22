@@ -1,7 +1,7 @@
 defmodule DiscordiaWeb.GameLive do
   use Phoenix.LiveView
 
-  alias Discordia.{GameSupervisor, GameServer}
+  alias Discordia.{GameSupervisor, GameServer, PlayerServer}
   alias DiscordiaWeb.GameView
   alias DiscordiaWeb.Presence
   alias Phoenix.Socket.Broadcast
@@ -15,7 +15,14 @@ defmodule DiscordiaWeb.GameLive do
   def mount(%{game_name: game_name, current_player: current_player}, socket) do
     Phoenix.PubSub.subscribe(Discordia.PubSub, "game:" <> game_name)
     Presence.track(self(), "game:" <> game_name, current_player, %{})
-    socket = assign(socket, %{game_name: game_name, players: nil, game: nil})
+
+    socket =
+      assign(socket, %{
+        game_name: game_name,
+        players: nil,
+        game: nil,
+        current_player: current_player
+      })
 
     {:ok, socket}
   end
@@ -38,8 +45,10 @@ defmodule DiscordiaWeb.GameLive do
   end
 
   def handle_info({:ok, :game_started, game_name}, socket) do
+    %{assigns: %{current_player: current_player}} = socket
     game = GameServer.summary(game_name)
-    {:noreply, assign(socket, %{game: game})}
+    current_player_cards = PlayerServer.list_cards(game_name, current_player)
+    {:noreply, assign(socket, %{game: game, current_player_cards: current_player_cards})}
   end
 
   def handle_info({:ok, :game_stopped}, socket) do

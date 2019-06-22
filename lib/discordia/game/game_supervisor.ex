@@ -11,7 +11,7 @@ defmodule Discordia.GameSupervisor do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
 
-  def start_game(game_name, players) when length(players) > 1 do
+  def start_game(game_name, players) do
     child_spec = %{
       id: GameServer,
       start: {GameServer, :start_link, [game_name, players]},

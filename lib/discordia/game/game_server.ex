@@ -77,6 +77,7 @@ defmodule Discordia.GameServer do
       name: game.name,
       players: players_summary,
       status: game.status,
+      history: game.history,
       table_card: Game.table_card(game),
       current_player: Game.current_player(game)
     }

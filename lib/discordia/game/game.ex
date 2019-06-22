@@ -43,20 +43,20 @@ defmodule Discordia.Game do
   """
   @spec play_card(atom | game, String.t(), map) :: {:ok, game} | {:error, String.t()}
   def play_card(game, player, card) do
-    %{"colour" => table_colour, "value" => table_value} = table_card(game)
+    %{colour: table_colour, value: table_value} = table_card(game)
     current_player = current_player(game)
 
     case {player, card} do
-      {^current_player, %{"colour" => "black"}} ->
+      {^current_player, %{colour: "black"}} ->
         commit_turn(game, player, set_black_colour(card))
 
-      {^current_player, %{"value" => ^table_value}} ->
+      {^current_player, %{value: ^table_value}} ->
         commit_turn(game, player, card)
 
-      {^current_player, %{"colour" => ^table_colour}} ->
+      {^current_player, %{colour: ^table_colour}} ->
         commit_turn(game, player, card)
 
-      {_, %{"colour" => ^table_colour, "value" => ^table_value}} ->
+      {_, %{colour: ^table_colour, value: ^table_value}} ->
         commit_turn(game, player, card)
 
       {^current_player, _} ->
@@ -90,13 +90,13 @@ defmodule Discordia.Game do
 
     game =
       case card do
-        %{"value" => "reverse"} ->
+        %{value: "reverse"} ->
           reverse_players(game)
 
-        %{"value" => "block"} ->
+        %{value: "block"} ->
           block_next_player(game)
 
-        %{"value" => "+" <> quantity} ->
+        %{value: "+" <> quantity} ->
           quantity = String.to_integer(quantity)
 
           Enum.reduce(1..quantity, game, fn _, game ->
@@ -130,8 +130,8 @@ defmodule Discordia.Game do
   end
 
   defp set_black_colour(card) do
-    with %{"colour" => "black"} <- card do
-      %{card | "colour" => "blue"}
+    with %{colour: "black"} <- card do
+      %{card | colour: "blue"}
     end
   end
 
@@ -142,17 +142,17 @@ defmodule Discordia.Game do
 
     coloured =
       for value <- values, colour <- @colours do
-        %{"value" => value, "colour" => colour}
+        %{value: value, colour: colour}
       end
 
     zeros =
       for colour <- @colours do
-        %{"value" => "0", "colour" => colour}
+        %{value: "0", colour: colour}
       end
 
     blacks =
       for value <- ["+4", "wildcard"], _colour <- @colours do
-        %{"value" => value, "colour" => "black"}
+        %{value: value, colour: "black"}
       end
 
     deck = coloured ++ coloured ++ zeros ++ blacks

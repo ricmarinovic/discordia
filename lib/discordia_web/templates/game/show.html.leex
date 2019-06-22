@@ -9,26 +9,32 @@
 </h2>
 
 <%= if assigns[:players] do %>
-<div id="players">
-  <h2>Players</h2>
+  <div id="players">
+    <h2>Players</h2>
 
-  <ul>
-    <%= for {player, _} <- @players do %>
-      <li><%= player %></li>
-    <% end %>
-  </ul>
-</div>
+    <ul>
+      <%= for {player, _} <- @players do %>
+        <li><%= player %></li>
+      <% end %>
+    </ul>
+  </div>
 <% end %>
 
 <%= if assigns[:game] do %>
+  <h1>Table card: <%= @game.table_card.colour %> <%= @game.table_card.value %></h1>
+
+  <h1>Player cards</h1>
+
+  <ul>
+    <%= for card <- @current_player_cards do %>
+    <li><%= card.colour %> <%= card.value %></li>
+    <% end %>
+  </ul>
+
   <h1>Game History</h1>
   <ul>
     <%= for turn <- @game.history do %>
-    <li>
-      Turn <%= turn.turn %>:
-      <%= turn.card.color %>
-      <%= turn.card.value %>
-    </li>
+    <li><%= turn.card.colour %> <%= turn.card.value %></li>
     <% end %>
   </ul>
 
