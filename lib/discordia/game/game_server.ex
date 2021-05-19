@@ -1,188 +1,136 @@
 defmodule Discordia.GameServer do
-  @moduledoc """
-  Holds the state of a single game.
-  """
-
   use GenServer
 
-  alias Discordia.{Player, Dealer}
+  require Logger
 
-  def start_link(game, players) do
-    {:ok, _} = GenServer.start_link(__MODULE__, [game, players],
-        name: via(game))
+  alias Discordia.Game
+  alias Discordia.PlayerServer, as: Player
+
+  @timeout :timer.minutes(30)
+  @initial_cards_count 7
+
+  @doc """
+  Returns information about the game.
+  """
+  def summary(game_name) do
+    GenServer.call(via_tuple(game_name), :summary)
   end
 
-  def via(game), do: {:global, "@#{game}"}
+  @doc """
+  The player plays a card, putting it on the table.
+  """
+  def play_card(game_name, player_name, card) do
+    GenServer.call(via_tuple(game_name), {:play_card, game_name, player_name, card})
+  end
 
-  def init([_game, players]) do
-    state = %{
-      players: players,
-      player_queue: players,
-      deck: Dealer.new_deck(),
-      history: [%{
-        turn: 0,
-        card: nil,
-        player: nil,
-      }],
-      status: {:started, :normal}
+  @doc """
+  The player draws a card from the deck.
+
+  The card is removed from the deck. If the deck is empty, it will be filled by a new deck.
+  The next player in the queue is to play. The game must be in progress (ok status).
+
+  The player must have the card that he is trying to play.
+  """
+  def draw_card(game_name, player_name) do
+    GenServer.call(via_tuple(game_name), {:draw_card, game_name, player_name})
+  end
+
+  @spec start_link(String.t(), String.t()) :: {:ok, pid} | {:error, any} | :ignore
+  def start_link(game_name, players) do
+    GenServer.start_link(__MODULE__, {game_name, players}, name: via_tuple(game_name))
+  end
+
+  defp via_tuple(game_name) do
+    {:via, Registry, {Discordia.GameRegistry, "#{game_name}"}}
+  end
+
+  def game_pid(game_name) do
+    game_name
+    |> via_tuple()
+    |> GenServer.whereis()
+  end
+
+  @impl GenServer
+  def init({game_name, players}) do
+    game =
+      Enum.reduce(players, Game.new(game_name, players), fn player_name, game ->
+        Player.start_link(game_name, player_name)
+
+        Enum.reduce(1..@initial_cards_count, game, fn _, game ->
+          {card, game} = Game.draw_card(game)
+          Player.add_card(game_name, player_name, card)
+          game
+        end)
+      end)
+
+    {:ok, game, @timeout}
+  end
+
+  @impl GenServer
+  def handle_call(:summary, _from, game) do
+    players_summary =
+      Enum.map(game.players, fn player_name ->
+        %{player_name => Player.list_cards(game.name, player_name)}
+      end)
+
+    summary = %{
+      name: game.name,
+      players: players_summary,
+      status: game.status,
+      history: game.history,
+      table_card: Game.table_card(game),
+      current_player: Game.current_player(game)
     }
 
-    {:ok, state}
+    {:reply, summary, game}
   end
 
-  # Players
+  def handle_call({:play_card, game_name, player_name, card}, _from, game) do
+    with {:ok, :normal} <- game.status,
+         {:ok, ^card} <- Player.has_card?(game_name, player_name, card),
+         {:ok, game} <- Game.play_card(game, player_name, card) do
+      Player.remove_card(game_name, player_name, card)
 
-  def players(game), do: GenServer.call(via(game), :players)
+      case Player.list_cards(game_name, player_name) do
+        [] ->
+          game = %{game | status: {:winner, player_name}}
+          {:reply, card, game}
 
-  def player_queue(game), do: GenServer.call(via(game), :queue)
-
-  def current_player(game), do: GenServer.call(via(game), :current_player)
-
-  def next_player(game), do: GenServer.call(via(game), :next_player)
-
-  def whois_next(game), do: GenServer.call(via(game), :whois_next)
-
-  def reverse(game), do: GenServer.cast(via(game), :reverse)
-
-  def block(game), do: GenServer.cast(via(game), :block)
-
-  def cut(game, player), do: GenServer.cast(via(game), {:cut, player})
-
-  # Deck
-
-  def deck(game), do: GenServer.call(via(game), :deck)
-
-  def current_card(game), do: GenServer.call(via(game), :current_card)
-
-  def draw_card(game), do: GenServer.call(via(game), :draw_card)
-
-  def put_card(game, card = %{color: "black"}, next) do
-    next = next || Dealer.initial_color()
-    GenServer.cast(via(game), {:put_card,  Map.put(card, :next, next)})
-  end
-  def put_card(game, card) do
-    GenServer.cast(via(game), {:put_card, card})
-  end
-
-  def make_play(game, player, card, next) do
-    make_play(game, player, Map.put(card, :next, next))
-  end
-
-  def make_play(game, player, card) do
-    case card do
-      %{value: "reverse"} ->
-        reverse(game)
-      %{value: "block"} ->
-        block(game)
-      %{value: value = "+" <> quantity} ->
-        plus_card(game, value, String.to_integer(quantity))
-      _ ->
-        next_player(game)
-    end
-
-    play = %{
-      turn: current_turn(game) + 1,
-      card: card,
-      player: player,
-    }
-
-    GenServer.cast(via(game), {:make_play, play})
-  end
-
-  defp plus_card(game, value, quantity) do
-    next_player = whois_next(game)
-
-    if Player.has_card(game, next_player, value: value) do
-      case status(game) do
-        {:plus_hold, ^value, acc} ->
-          status(game, {:plus_hold, value, quantity + acc})
         _ ->
-          status(game, {:plus_hold, value, quantity})
+          {:reply, card, game}
       end
-      next_player(game)
     else
-      case status(game) do
-        {:plus_hold, ^value, acc} ->
-          Player.draws(game, next_player, quantity + acc)
-        _ ->
-          Player.draws(game, next_player, quantity)
-      end
-      status(game, {:started, :normal})
-      block(game)
+      {:error, _reason} = error ->
+        {:reply, error, game}
+
+      {:winner, player_name} ->
+        {:reply, game_over_error(player_name), game}
     end
   end
 
-  # Turn
+  def handle_call({:draw_card, game_name, player_name}, _from, game) do
+    with {:ok, :normal} <- game.status,
+         ^player_name <- Game.current_player(game) do
+      {card, game} = Game.draw_card(game)
+      Player.add_card(game_name, player_name, card)
+      game = Game.rotate_players(game)
+      {:reply, card, game}
+    else
+      {:winner, player_name} ->
+        {:reply, game_over_error(player_name), game}
 
-  def current_turn(game), do: GenServer.call(via(game), :turn)
-
-  def history(game), do: GenServer.call(via(game), :history)
-
-  def status(game), do: GenServer.call(via(game), :status)
-  def status(game, new_status), do: GenServer.cast(via(game), {:status, new_status})
-
-  # Callbacks
-
-  def handle_call(:players, _from, state) do
-    {:reply, state.players, state}
-  end
-  def handle_call(:queue, _from, state = %{player_queue: queue}) do
-    {:reply, queue, state}
-  end
-  def handle_call(:current_player, _from, state = %{player_queue: [player | _]}) do
-    {:reply, player, state}
-  end
-  def handle_call(:next_player, _from, state = %{player_queue: [prev | rest]}) do
-    [next | _] = rest
-    {:reply, next, %{state | player_queue: rest ++ [prev]}}
-  end
-  def handle_call(:whois_next, _from, state = %{player_queue: [_, next | _]}) do
-    {:reply, next, state}
-  end
-  def handle_call(:current_card, _from, state = %{history: [last | _]}) do
-    {:reply, last.card, state}
-  end
-  def handle_call(:draw_card, _from, state = %{deck: []}) do
-    [card | rest] = Dealer.new_deck()
-    {:reply, card, %{state | deck: rest}}
-  end
-  def handle_call(:draw_card, _from, state = %{deck: [card | rest]}) do
-    {:reply, card, %{state | deck: rest}}
-  end
-  def handle_call(:deck, _from, state) do
-    {:reply, state.deck, state}
-  end
-  def handle_call(:turn, _from, state = %{history: [last | _]}) do
-    {:reply, last.turn, state}
-  end
-  def handle_call(:history, _from, state = %{history: history}) do
-    {:reply, history, state}
-  end
-  def handle_call(:status, _from, state = %{status: status}) do
-    {:reply, status, state}
+      _ ->
+        {:reply, {:error, "Not player's turn."}, game}
+    end
   end
 
-  def handle_cast(:reverse, state = %{player_queue: queue}) do
-    {:noreply, %{state | player_queue: Enum.reverse(queue)}}
+  @impl GenServer
+  def handle_info(:timeout, game) do
+    Logger.info("Terminating game #{game.name} due to timeout.")
+    {:stop, :normal, game}
   end
-  def handle_cast(:block, state = %{player_queue: queue}) do
-    [current, blocked | rest] = queue
-    {:noreply, %{state | player_queue: rest ++ [current, blocked]}}
-  end
-  def handle_cast({:cut, player}, state = %{player_queue: queue}) do
-    {back, front} =
-      queue
-      |> Enum.split(Enum.find_index(queue, &(&1 == player)))
 
-    {:noreply, %{state | player_queue: front ++ back}}
-  end
-  def handle_cast({:put_card, card}, state = %{history: [last | rest]}) do
-    {:noreply, %{state | history: [%{last | card: card} | rest]}}
-  end
-  def handle_cast({:make_play, play}, state = %{history: old}) do
-    {:noreply, %{state | history: [play | old]}}
-  end
-  def handle_cast({:status, new_status}, state) do
-    {:noreply, %{state | status: new_status}}
+  defp game_over_error(player_name) do
+    {:error, "Game over. Winner #{player_name}"}
   end
 end

@@ -1,0 +1,45 @@
+<%= if assigns[:error] do %>
+  <div class="alert alert-danger" role="alert">
+    <%= @error %>
+  </div>
+<% end %>
+
+<h2>
+  <%= Routes.game_url(@socket, :show, @game_name) %>
+</h2>
+
+<%= if assigns[:players] do %>
+  <div id="players">
+    <h2>Players</h2>
+
+    <ul>
+      <%= for {player, _} <- @players do %>
+        <li><%= player %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<%= if assigns[:game] do %>
+  <h1>Table card: <%= @game.table_card.colour %> <%= @game.table_card.value %></h1>
+
+  <h1>Player cards</h1>
+
+  <ul>
+    <%= for card <- @current_player_cards do %>
+    <li><%= card.colour %> <%= card.value %></li>
+    <% end %>
+  </ul>
+
+  <h1>Game History</h1>
+  <ul>
+    <%= for turn <- @game.history do %>
+    <li><%= turn.card.colour %> <%= turn.card.value %></li>
+    <% end %>
+  </ul>
+
+  <button phx-click="stop_game">Stop game</button>
+<% else %>
+  <button phx-click="start_game">Start game</button>
+<% end %>
+
